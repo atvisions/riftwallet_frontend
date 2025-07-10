@@ -140,7 +140,7 @@ onUnmounted(() => {
 <style lang="scss">
 .wallet-app {
   width: 375px;
-  height: 762px;
+  height: 600px; // 固定高度，适应插件环境
   background: #0F172A;
   color: #f1f5f9;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -199,7 +199,7 @@ body, html {
   margin: 0;
   padding: 0;
   width: 375px;
-  height: 762px;
+  height: 600px; // 固定高度，适应插件环境
   overflow: hidden;
 }
 

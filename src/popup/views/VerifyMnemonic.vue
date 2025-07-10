@@ -1,74 +1,77 @@
 <template>
-  <div class="verify-mnemonic-page">
-    <div class="header">
-      <button class="back-btn" @click="goBack">
-        <i class="ri-arrow-left-line"></i>
-      </button>
-      <h1>Verify Seed Phrase</h1>
-      <div class="placeholder"></div>
-    </div>
-    
-    <div class="content">
-      <div class="description">
-        <h2>Your Seed Phrase</h2>
-        <p>Write down these 12 words in order and keep them safe.</p>
-      </div>
-      
-      <div class="mnemonic-display">
-        <div class="word-grid">
-          <div
-            v-for="(word, index) in mnemonicWords"
-            :key="index"
-            class="word-display-container"
-          >
-            <label>{{ index + 1 }}</label>
-            <div class="word-display">
-              {{ word }}
+  <ResponsiveLayout
+    title="Verify Seed Phrase"
+    :show-header="true"
+    :show-footer="false"
+    :show-back-button="true"
+    :scrollable="true"
+    padding="0"
+    @back="goBack"
+  >
+    <div class="verify-mnemonic-container">
+      <div class="content-area">
+        <div class="description">
+          <h2>Your Seed Phrase</h2>
+          <p>Write down these 12 words in order and keep them safe.</p>
+        </div>
+
+        <div class="mnemonic-display">
+          <div class="word-grid">
+            <div
+              v-for="(word, index) in mnemonicWords"
+              :key="index"
+              class="word-display-container"
+            >
+              <label>{{ index + 1 }}</label>
+              <div class="word-display">
+                {{ word }}
+              </div>
             </div>
+          </div>
+
+          <div class="mnemonic-actions">
+            <button class="copy-btn" @click="copyMnemonic">
+              <i class="ri-clipboard-line"></i>
+              Copy to Clipboard
+            </button>
           </div>
         </div>
 
-        <div class="mnemonic-actions">
-          <button class="copy-btn" @click="copyMnemonic">
-            <i class="ri-clipboard-line"></i>
-            Copy to Clipboard
-          </button>
+        <div class="error-message" v-if="error">
+          <i class="ri-error-warning-line"></i>
+          {{ error }}
         </div>
-      </div>
-      
-      <div class="error-message" v-if="error">
-        <i class="ri-error-warning-line"></i>
-        {{ error }}
-      </div>
-      
-      <div class="security-tips">
-        <div class="tips-content">
-          <i class="ri-shield-check-line"></i>
-          <div>
-            <h3>Security Notice</h3>
-            <p>Never share your seed phrase. Store it safely offline.</p>
+
+        <div class="security-tips">
+          <div class="tips-content">
+            <i class="ri-shield-check-line"></i>
+            <div>
+              <h3>Security Notice</h3>
+              <p>Never share your seed phrase. Store it safely offline.</p>
+            </div>
           </div>
         </div>
       </div>
+
+      <!-- Fixed Bottom Button -->
+      <div class="bottom-section">
+        <button
+          class="verify-btn"
+          :disabled="!isValidMnemonic || submitting"
+          @click="verifyMnemonic"
+        >
+          <span v-if="submitting">
+            <i class="ri-loader-4-line animate-spin"></i>
+            Verifying...
+          </span>
+          <span v-else>
+            I've Written It Down
+            <i class="ri-check-line"></i>
+          </span>
+        </button>
+      </div>
     </div>
-    
-    <div class="footer">
-      <button 
-        class="verify-btn" 
-        :disabled="!isValidMnemonic || submitting"
-        @click="verifyMnemonic"
-      >
-        <span v-if="submitting">
-          <i class="ri-loader-4-line animate-spin"></i>
-          Verifying...
-        </span>
-        <span v-else>
-          I've Written It Down
-          <i class="ri-check-line"></i>
-        </span>
-      </button>
-    </div>
-  </div>
+  </ResponsiveLayout>
 </template>
 
 <script setup lang="ts">
@@ -77,6 +80,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@shared/stores/auth'
 import { useWalletStore } from '@shared/stores/wallet'
 import { APP_CONFIG } from '@shared/constants'
+import ResponsiveLayout from '@/popup/components/ResponsiveLayout.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -138,53 +142,23 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.verify-mnemonic-page {
-  width: 375px;
-  height: 762px;
-  background: #0F172A;
-  color: #f1f5f9;
+.verify-mnemonic-container {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 24px;
+  min-height: calc(100vh - 120px);
 }
 
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid #334155;
-  
-  .back-btn {
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 10px;
-    color: #f1f5f9;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    
-    &:hover {
-      background: rgba(255, 255, 255, 0.15);
-    }
-  }
-  
-  h1 {
-    font-size: 18px;
-    font-weight: 600;
-    margin: 0;
-  }
-  
-  .placeholder {
-    width: 40px;
-  }
-}
-
-.content {
+.content-area {
   flex: 1;
-  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  overflow-y: auto;
+  margin-bottom: 24px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -192,7 +166,6 @@ onMounted(() => {
 
 .description {
   text-align: center;
-  margin-bottom: 20px;
 
   h2 {
     font-size: 18px;
@@ -322,35 +295,103 @@ onMounted(() => {
   }
 }
 
-.footer {
-  padding: 16px 20px;
-  border-top: 1px solid #334155;
-  
-  .verify-btn {
+.bottom-section {
+  flex-shrink: 0;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.verify-btn {
+  width: 100%;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.2);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
     width: 100%;
-    background: #6366f1;
-    color: white;
-    border: none;
-    padding: 16px;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: all 0.3s ease;
-    
-    &:hover:not(:disabled) {
-      background: #5856d6;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+
+    &::before {
+      left: 100%;
     }
-    
-    &:disabled {
-      background: #374151;
-      color: #9ca3af;
-      cursor: not-allowed;
-    }
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+  }
+}
+
+// 响应式设计
+@media (max-width: 480px) {
+  .verify-mnemonic-container {
+    padding: 20px;
+    min-height: calc(100vh - 100px);
+  }
+
+  .content-area {
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  .bottom-section {
+    padding-top: 12px;
+  }
+
+  .verify-btn {
+    padding: 14px 20px;
+    font-size: 15px;
+  }
+}
+
+// 弹窗模式特殊样式
+:global(.layout-popup) .verify-mnemonic-container {
+  min-height: calc(600px - 120px);
+  padding: 20px;
+
+  .content-area {
+    gap: 18px;
+    margin-bottom: 16px;
+  }
+
+  .bottom-section {
+    padding-top: 12px;
+  }
+
+  .verify-btn {
+    padding: 14px 20px;
+    font-size: 15px;
   }
 }
 

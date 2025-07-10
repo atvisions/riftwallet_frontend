@@ -11,12 +11,105 @@ console.log('Riftwallet Background Script loaded')
 // 初始化
 chrome.runtime.onInstalled.addListener(async (details) => {
   console.log('Extension installed:', details.reason)
-  
+
   if (details.reason === 'install') {
     // 首次安装时初始化
     await initializeExtension()
   }
 })
+
+// 处理扩展图标点击事件
+chrome.action.onClicked.addListener(async (tab) => {
+  console.log('Background: Extension icon clicked, tab:', tab)
+
+  try {
+    // 检查是否支持 Side Panel API
+    if (chrome.sidePanel && tab.windowId) {
+      console.log('Background: Opening side panel for window:', tab.windowId)
+      // 打开侧边栏
+      await chrome.sidePanel.open({ windowId: tab.windowId })
+      console.log('Background: Side panel opened successfully')
+    } else {
+      console.log('Background: Side Panel API not supported or no window ID, using popup fallback')
+      // 降级：打开弹窗页面作为新标签页
+      await chrome.tabs.create({
+        url: chrome.runtime.getURL('src/popup/index.html'),
+        windowId: tab.windowId
+      })
+    }
+  } catch (error) {
+    console.error('Background: Failed to open side panel:', error)
+
+    // 如果侧边栏失败，尝试打开新标签页作为降级
+    try {
+      console.log('Background: Attempting fallback - opening new tab...')
+      await chrome.tabs.create({
+        url: chrome.runtime.getURL('src/popup/index.html'),
+        windowId: tab.windowId
+      })
+    } catch (fallbackError) {
+      console.error('Background: Fallback also failed:', fallbackError)
+    }
+  }
+})
+
+// 处理右键菜单点击
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  if (info.menuItemId === 'open-popup') {
+    try {
+      await chrome.tabs.create({
+        url: chrome.runtime.getURL('src/popup/index.html'),
+        windowId: tab?.windowId
+      })
+    } catch (error) {
+      console.error('Failed to open popup:', error)
+    }
+  }
+})
+
+// 监听侧边栏相关的消息
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log('Background: Received message:', message.type, 'from sender:', sender)
+
+  if (message.type === 'TOGGLE_SIDEPANEL') {
+    handleToggleSidePanel(sender.tab?.windowId)
+      .then(() => sendResponse({ success: true }))
+      .catch(error => sendResponse({ success: false, error: error.message }))
+    return true
+  }
+})
+
+// 切换侧边栏显示状态
+async function handleToggleSidePanel(windowId?: number) {
+  console.log('Background: handleToggleSidePanel called with windowId:', windowId)
+
+  if (!chrome.sidePanel) {
+    throw new Error('Side Panel API not available')
+  }
+
+  try {
+    // 如果没有 windowId，获取当前活动窗口
+    let targetWindowId = windowId
+    if (!targetWindowId) {
+      console.log('Background: No windowId provided, getting current window...')
+      const currentWindow = await chrome.windows.getCurrent()
+      targetWindowId = currentWindow.id
+      console.log('Background: Using current window ID:', targetWindowId)
+    }
+
+    if (!targetWindowId) {
+      throw new Error('Unable to determine target window')
+    }
+
+    console.log('Background: Opening side panel for window:', targetWindowId)
+    await chrome.sidePanel.open({ windowId: targetWindowId })
+    console.log('Background: Side panel opened successfully')
+
+  } catch (error) {
+    console.error('Background: Failed to toggle side panel:', error)
+    throw error
+  }
+}
 
 // 初始化扩展
 async function initializeExtension() {
@@ -35,7 +128,14 @@ async function initializeExtension() {
         lockTimeout: 300000
       }
     })
-    
+
+    // 创建右键菜单
+    chrome.contextMenus.create({
+      id: 'open-popup',
+      title: 'Open Wallet Popup',
+      contexts: ['action']
+    })
+
     console.log('Extension initialized with device ID:', deviceId)
   } catch (error) {
     console.error('Failed to initialize extension:', error)
@@ -68,28 +168,34 @@ async function handleMessage(message: ChromeMessage): Promise<any> {
   switch (message.type) {
     case MESSAGE_TYPES.GET_WALLETS:
       return await getWallets()
-    
+
+    case MESSAGE_TYPES.GET_CURRENT_WALLET:
+      return await getCurrentWallet()
+
+    case MESSAGE_TYPES.SET_CURRENT_WALLET:
+      return await setCurrentWallet(message.data)
+
     case MESSAGE_TYPES.CREATE_WALLET:
       return await createWallet(message.data)
-    
+
     case MESSAGE_TYPES.IMPORT_WALLET:
       return await importWallet(message.data)
-    
+
     case MESSAGE_TYPES.DELETE_WALLET:
       return await deleteWallet(message.data.walletId)
-    
+
     case MESSAGE_TYPES.GET_BALANCE:
       return await getBalance(message.data.walletId)
-    
+
     case MESSAGE_TYPES.TRANSFER:
       return await transfer(message.data)
-    
+
     case MESSAGE_TYPES.SWAP:
       return await swap(message.data)
-    
+
     case MESSAGE_TYPES.GET_SETTINGS:
       return await getSettings()
-    
+
     case MESSAGE_TYPES.UPDATE_SETTINGS:
       return await updateSettings(message.data)
 
@@ -104,6 +210,30 @@ async function handleMessage(message: ChromeMessage): Promise<any> {
   }
 }
 
+// 获取当前钱包
+async function getCurrentWallet() {
+  // 初始化 Chrome Mock（开发环境）
+  initChromeMock()
+  const storage = getStorage()
+
+  const result = await storage.get([STORAGE_KEYS.CURRENT_WALLET])
+  return result[STORAGE_KEYS.CURRENT_WALLET] || null
+}
+
+// 设置当前钱包
+async function setCurrentWallet(data: { walletId: number }) {
+  // 初始化 Chrome Mock（开发环境）
+  initChromeMock()
+  const storage = getStorage()
+
+  await storage.set({
+    [STORAGE_KEYS.CURRENT_WALLET]: { walletId: data.walletId }
+  })
+
+  console.log('Current wallet saved to storage:', data.walletId)
+  return { success: true }
+}
+
 // 获取钱包列表
 async function getWallets() {
   // 初始化 Chrome Mock（开发环境）
@@ -112,11 +242,11 @@ async function getWallets() {
 
   const result = await storage.get([STORAGE_KEYS.DEVICE_ID, STORAGE_KEYS.WALLETS])
   const deviceId = result[STORAGE_KEYS.DEVICE_ID]
-  
+
   if (!deviceId) {
     throw new Error('Device ID not found')
   }
-  
+
   // 构建完整的 API URL
   const baseUrl = APP_CONFIG.API_BASE_URL.startsWith('http')
     ? APP_CONFIG.API_BASE_URL

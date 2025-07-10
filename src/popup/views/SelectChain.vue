@@ -14,27 +14,35 @@
       </div>
       
       <div class="chains-container" v-if="!loading">
-        <div 
-          v-for="chain in supportedChains" 
+        <div
+          v-for="chain in supportedChains"
           :key="chain.chain"
           class="chain-card"
           :class="{ active: selectedChain?.chain === chain.chain }"
           @click="selectChain(chain)"
         >
-          <div class="chain-icon">
-            <img v-if="chain.logo" :src="chain.logo" :alt="chain.name" />
-            <div v-else class="chain-placeholder">
-              {{ (chain.chain || chain.name || 'C').charAt(0).toUpperCase() }}
+          <div class="card-background"></div>
+          <div class="card-content">
+            <div class="chain-icon">
+              <img v-if="chain.logo" :src="chain.logo" :alt="chain.name" />
+              <div v-else class="chain-placeholder">
+                {{ (chain.chain || chain.name || 'C').charAt(0).toUpperCase() }}
+              </div>
+              <div class="icon-glow"></div>
+            </div>
+            <div class="chain-info">
+              <h3>{{ chain.name }}</h3>
+              <p>{{ chain.chain }}</p>
+            </div>
+            <div class="chain-selector">
+              <div class="radio-circle" :class="{ selected: selectedChain?.chain === chain.chain }">
+                <i v-if="selectedChain?.chain === chain.chain" class="ri-check-line"></i>
+              </div>
             </div>
           </div>
-          <div class="chain-info">
-            <h3>{{ chain.name }}</h3>
-            <p>{{ chain.chain }}</p>
-          </div>
-          <div class="chain-selector">
-            <div class="radio-circle" :class="{ selected: selectedChain?.chain === chain.chain }">
-              <i v-if="selectedChain?.chain === chain.chain" class="ri-check-line"></i>
-            </div>
+          <div class="card-decoration">
+            <div class="decoration-circle"></div>
+            <div class="decoration-line"></div>
           </div>
         </div>
       </div>
@@ -182,12 +190,13 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .select-chain-page {
-  width: 375px;
-  height: 762px;
+  width: 100%;
+  min-height: 100vh;
   background: #0F172A;
   color: #f1f5f9;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .header {
@@ -227,7 +236,7 @@ onMounted(() => {
 
 .content {
   flex: 1;
-  padding: 24px 20px;
+  padding: 24px 20px 100px;
   overflow-y: auto;
 }
 
@@ -244,44 +253,100 @@ onMounted(() => {
 .chains-container {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .chain-card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  position: relative;
+  border-radius: 20px;
+  padding: 0;
   cursor: pointer;
-  transition: all 0.3s ease;
-  
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  height: 80px;
+
   &:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: #6366f1;
+    transform: translateY(-4px) scale(1.01);
   }
-  
+
+  &:active {
+    transform: translateY(-2px) scale(1.005);
+  }
+
   &.active {
-    background: rgba(99, 102, 241, 0.1);
-    border-color: #6366f1;
+    .card-background::before {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4, #10b981);
+    }
+
+    .chain-selector .radio-circle {
+      border-color: #6366f1;
+      background: #6366f1;
+
+      i {
+        color: white;
+      }
+    }
   }
 }
 
+.card-background {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  transition: all 0.5s ease;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    padding: 2px;
+    background: linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: xor;
+    transition: all 0.5s ease;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    border-radius: 18px;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(20px);
+    transition: all 0.5s ease;
+  }
+}
+
+.card-content {
+  position: relative;
+  z-index: 2;
+  padding: 16px 20px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
 .chain-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
   overflow: hidden;
   flex-shrink: 0;
-  
+  position: relative;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  transition: all 0.4s ease;
+
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    position: relative;
+    z-index: 2;
   }
-  
+
   .chain-placeholder {
     width: 100%;
     height: 100%;
@@ -291,22 +356,47 @@ onMounted(() => {
     justify-content: center;
     font-weight: 600;
     color: white;
+    font-size: 18px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .icon-glow {
+    position: absolute;
+    inset: -4px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4);
+    opacity: 0;
+    filter: blur(8px);
+    transition: all 0.4s ease;
+    z-index: 0;
+  }
+
+  &:hover {
+    transform: scale(1.05) rotate(2deg);
+
+    .icon-glow {
+      opacity: 0.6;
+    }
   }
 }
 
 .chain-info {
   flex: 1;
-  
+
   h3 {
     font-size: 16px;
     font-weight: 600;
     margin: 0 0 4px 0;
+    color: #f1f5f9;
+    transition: all 0.3s ease;
   }
-  
+
   p {
     font-size: 14px;
     color: #94a3b8;
     margin: 0;
+    transition: all 0.3s ease;
   }
 }
 
@@ -315,29 +405,90 @@ onMounted(() => {
   align-items: center;
 
   .radio-circle {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     border: 2px solid #64748b;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.05);
 
     &.selected {
       border-color: #6366f1;
       background: #6366f1;
+      transform: scale(1.1);
 
       i {
         color: white;
-        font-size: 12px;
+        font-size: 14px;
       }
     }
 
     &:not(.selected) {
-      background: transparent;
+      background: rgba(255, 255, 255, 0.05);
     }
   }
+}
+
+.card-decoration {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 1;
+  opacity: 0.2;
+  transition: all 0.4s ease;
+
+  .decoration-circle {
+    width: 32px;
+    height: 32px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    position: relative;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 16px;
+      height: 16px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+    }
+  }
+
+  .decoration-line {
+    position: absolute;
+    top: 50%;
+    right: -16px;
+    width: 24px;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.2), transparent);
+  }
+}
+
+.chain-card:hover {
+  .card-background::before {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4);
+  }
+
+  .chain-info {
+    h3 {
+      color: #ffffff;
+      transform: translateX(4px);
+    }
+
+    p {
+      color: #cbd5e1;
+    }
+  }
+
+  box-shadow:
+    0 20px 40px rgba(99, 102, 241, 0.3),
+    0 0 0 1px rgba(99, 102, 241, 0.2);
 }
 
 .loading-container, .error-container {
@@ -384,12 +535,19 @@ onMounted(() => {
 }
 
 .footer {
-  padding: 20px;
-  border-top: 1px solid #334155;
-  
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px 20px 20px;
+  background: linear-gradient(180deg, transparent 0%, #0F172A 20%, #0F172A 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  z-index: 10;
+
   .continue-btn {
     width: 100%;
-    background: #6366f1;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
     color: white;
     border: none;
     padding: 16px;
@@ -402,15 +560,17 @@ onMounted(() => {
     justify-content: center;
     gap: 8px;
     transition: all 0.3s ease;
-    
+
     &:hover:not(:disabled) {
-      background: #5856d6;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
     }
-    
+
     &:disabled {
-      background: #374151;
-      color: #9ca3af;
+      opacity: 0.5;
       cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
     }
   }
 }
@@ -422,5 +582,94 @@ onMounted(() => {
 
 .animate-spin {
   animation: spin 1s linear infinite;
+}
+
+// 响应式设计
+@media (max-width: 480px) {
+  .select-chain-page {
+    width: 100%;
+  }
+
+  .content {
+    padding: 20px 16px;
+  }
+
+  .chains-container {
+    gap: 14px;
+  }
+
+  .chain-card {
+    height: 72px;
+
+    .card-content {
+      padding: 14px 16px;
+      gap: 14px;
+    }
+  }
+
+  .chain-icon {
+    width: 44px;
+    height: 44px;
+
+    .chain-placeholder {
+      font-size: 16px;
+    }
+  }
+
+  .chain-info {
+    h3 {
+      font-size: 15px;
+    }
+
+    p {
+      font-size: 13px;
+    }
+  }
+
+  .card-decoration {
+    top: 14px;
+    right: 14px;
+
+    .decoration-circle {
+      width: 28px;
+      height: 28px;
+
+      &::before {
+        width: 14px;
+        height: 14px;
+      }
+    }
+  }
+}
+
+// 弹窗模式特殊样式
+:global(.layout-popup) .select-chain-page {
+  width: 375px;
+  min-height: 600px;
+
+  .content {
+    padding: 20px 16px 100px;
+  }
+
+  .chains-container {
+    gap: 12px;
+  }
+
+  .chain-card {
+    height: 72px;
+
+    .card-content {
+      padding: 14px 16px;
+    }
+  }
+
+  .chain-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .footer {
+    width: 375px;
+  }
 }
 </style>

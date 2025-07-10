@@ -1,14 +1,15 @@
 <template>
-  <div class="import-private-key-input-page">
-    <div class="header">
-      <button @click="goBack" class="back-btn">
-        <i class="ri-arrow-left-line"></i>
-      </button>
-      <h1>Import Private Key</h1>
-    </div>
-    
-    <div class="content">
-      <div class="form-container">
+  <ResponsiveLayout
+    title="Import Private Key"
+    :show-header="true"
+    :show-footer="false"
+    :show-back-button="true"
+    :scrollable="true"
+    padding="0"
+    @back="goBack"
+  >
+    <div class="import-private-key-container">
+      <div class="form-content">
         <!-- Selected Chain Display -->
         <div class="selected-chain" v-if="selectedChain">
           <div class="chain-display">
@@ -81,9 +82,17 @@
           </div>
           <div v-if="passwordError" class="error-message">{{ passwordError }}</div>
         </div>
+      </div>
 
-        <!-- Import Button -->
-        <button 
+      <!-- Error Alert -->
+      <div v-if="error" class="error-alert">
+        <i class="ri-error-warning-line"></i>
+        <span>{{ error }}</span>
+      </div>
+
+      <!-- Fixed Bottom Button -->
+      <div class="bottom-section">
+        <button
           class="import-btn"
           :disabled="!canImport || loading"
           @click="handleImport"
@@ -92,21 +101,16 @@
           <i v-else class="ri-key-line"></i>
           {{ loading ? 'Importing...' : 'Import Wallet' }}
         </button>
-
-        <!-- Error Alert -->
-        <div v-if="error" class="error-alert">
-          <i class="ri-error-warning-line"></i>
-          <span>{{ error }}</span>
-        </div>
       </div>
     </div>
-  </div>
+  </ResponsiveLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useWalletStore } from '@shared/stores/wallet'
+import ResponsiveLayout from '@/popup/components/ResponsiveLayout.vue'
 
 interface SupportedChain {
   chain: string
@@ -240,54 +244,32 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.import-private-key-input-page {
-  width: 375px;
-  height: 762px;
-  background: #0F172A;
-  color: #f1f5f9;
+.import-private-key-container {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 24px;
+  min-height: calc(100vh - 120px);
 }
 
-.header {
-  display: flex;
-  align-items: center;
-  padding: 16px;
-  border-bottom: 1px solid #1E293B;
-  flex-shrink: 0;
-
-  .back-btn {
-    background: none;
-    border: none;
-    color: #6366f1;
-    font-size: 20px;
-    margin-right: 16px;
-    cursor: pointer;
-
-    &:hover {
-      color: #8b5cf6;
-    }
-  }
-
-  h1 {
-    font-size: 18px;
-    font-weight: 600;
-    margin: 0;
-  }
-}
-
-.content {
+.form-content {
   flex: 1;
-  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
   overflow-y: auto;
+  margin-bottom: 24px;
 }
 
-.form-container {
-  max-width: 100%;
+.bottom-section {
+  flex-shrink: 0;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .selected-chain {
-  margin-bottom: 24px;
 
   .chain-display {
     display: flex;
@@ -337,7 +319,6 @@ onMounted(() => {
 }
 
 .form-group {
-  margin-bottom: 24px;
 
   label {
     display: block;
@@ -468,30 +449,53 @@ onMounted(() => {
 
 .import-btn {
   width: 100%;
-  padding: 14px;
+  padding: 16px 24px;
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   color: white;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.2);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+  }
 
   &:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+
+    &::before {
+      left: 100%;
+    }
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
   }
 
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     transform: none;
-    box-shadow: none;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
   }
 
   .spinning {
@@ -509,13 +513,56 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px;
+  padding: 12px 16px;
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: 8px;
+  border-radius: 12px;
   color: #ef4444;
   font-size: 14px;
-  margin-top: 16px;
+  margin-bottom: 16px;
+  backdrop-filter: blur(10px);
+}
+
+// 响应式设计
+@media (max-width: 480px) {
+  .import-private-key-container {
+    padding: 20px;
+    min-height: calc(100vh - 100px);
+  }
+
+  .form-content {
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  .bottom-section {
+    padding-top: 12px;
+  }
+
+  .import-btn {
+    padding: 14px 20px;
+    font-size: 15px;
+  }
+}
+
+// 弹窗模式特殊样式
+:global(.layout-popup) .import-private-key-container {
+  min-height: calc(600px - 120px);
+  padding: 20px;
+
+  .form-content {
+    gap: 18px;
+    margin-bottom: 16px;
+  }
+
+  .bottom-section {
+    padding-top: 12px;
+  }
+
+  .import-btn {
+    padding: 14px 20px;
+    font-size: 15px;
+  }
 }
 
 @keyframes spin {

@@ -24,6 +24,7 @@ export default defineConfig({
       '@': resolve(__dirname, 'src'),
       '@shared': resolve(__dirname, 'src/shared'),
       '@popup': resolve(__dirname, 'src/popup'),
+      '@sidepanel': resolve(__dirname, 'src/sidepanel'),
       '@background': resolve(__dirname, 'src/background'),
       '@content': resolve(__dirname, 'src/content'),
       '@options': resolve(__dirname, 'src/options')
@@ -37,6 +38,8 @@ export default defineConfig({
       input: {
         // 弹窗页面
         popup: resolve(__dirname, 'src/popup/index.html'),
+        // 侧边栏页面
+        sidepanel: resolve(__dirname, 'src/sidepanel/index.html'),
         // 选项页面
         options: resolve(__dirname, 'src/options/index.html'),
         // 后台脚本

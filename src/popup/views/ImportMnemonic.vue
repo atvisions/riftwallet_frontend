@@ -202,7 +202,7 @@ const handleImport = async () => {
 <style lang="scss" scoped>
 .import-mnemonic-page {
   width: 375px;
-  height: 762px;
+  height: 600px; // 固定高度，适应插件环境
   background: #0F172A;
   color: #f1f5f9;
   display: flex;

@@ -200,7 +200,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 .import-mnemonic-input-page {
   width: 375px;
-  height: 762px;
+  height: 600px; // 固定高度，适应插件环境
   background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
   color: #f1f5f9;
   overflow: hidden;

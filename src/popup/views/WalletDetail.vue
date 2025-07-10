@@ -14,7 +14,7 @@
         </div>
         <h2>{{ wallet.name }}</h2>
         <p class="wallet-address">{{ formatAddress(wallet.address) }}</p>
-        <p class="wallet-chain">{{ wallet.chain }}</p>
+        <p class="wallet-chain">{{ getChainName(wallet.chain) }}</p>
       </div>
       
       <div v-else class="loading">
@@ -29,6 +29,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useWalletStore } from '@shared/stores/wallet'
+import { CHAIN_CONFIG } from '@shared/constants'
 import { formatAddress } from '@shared/utils'
 
 const route = useRoute()
@@ -36,6 +37,11 @@ const walletStore = useWalletStore()
 
 const wallet = ref(null)
 const defaultAvatar = 'https://readdy.ai/api/search-image?query=abstract%20modern%20avatar%20icon%2C%20gradient%20colors%2C%20professional%20looking&width=64&height=64&seq=1&orientation=squarish'
+
+// 获取链的友好名称
+const getChainName = (chainCode: string) => {
+  return (CHAIN_CONFIG as any)[chainCode]?.name || chainCode
+}
 
 onMounted(() => {
   const walletId = parseInt(route.params.id as string)
@@ -46,7 +52,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 .wallet-detail {
   width: 375px;
-  height: 762px;
+  height: 600px; // 固定高度，适应插件环境
   background: #0F172A;
   color: #f1f5f9;
 }

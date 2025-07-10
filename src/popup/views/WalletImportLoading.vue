@@ -5,47 +5,39 @@
       <div class="success-icon">
         <i class="ri-check-line"></i>
       </div>
-      
+
       <!-- 标题 -->
-      <h1>Wallet Imported Successfully!</h1>
-      
-      <!-- 钱包信息 -->
+      <h1>Wallet Imported!</h1>
+
+      <!-- 钱包信息 - 精简版 -->
       <div class="wallet-info" v-if="walletInfo">
         <div class="wallet-card">
-          <img v-if="walletInfo.avatar" :src="walletInfo.avatar" :alt="walletInfo.name" class="wallet-avatar">
-          <div v-else class="wallet-placeholder">
+          <div class="wallet-placeholder">
             {{ walletInfo.chain.charAt(0).toUpperCase() }}
           </div>
           <div class="wallet-details">
-            <h3>{{ walletInfo.name || 'My Wallet' }}</h3>
-            <p class="wallet-chain">{{ walletInfo.chain }}</p>
+            <h3>{{ getChainName(walletInfo.chain) }} Wallet</h3>
             <p class="wallet-address">{{ formatAddress(walletInfo.address) }}</p>
           </div>
         </div>
       </div>
-      
-      <!-- Loading状态 -->
-      <div class="loading-section">
-        <div class="main-loading-spinner">
-          <div class="spinner-ring">
-            <div class="spinner-inner"></div>
-          </div>
-        </div>
-        <h2>Refreshing Wallet Data...</h2>
-        <p class="loading-description">
-          We're fetching the latest balance and token information from the blockchain.
-          This may take a few moments.
-        </p>
 
-        <!-- 进度指示器 -->
+      <!-- Loading状态 -->
+      <div class="loading-section" v-if="!error">
+        <div class="main-loading-spinner">
+          <div class="spinner-ring"></div>
+        </div>
+        <h2>Loading Wallet Data...</h2>
+
+        <!-- 简化的进度指示器 -->
         <div class="progress-steps">
           <div class="step" :class="{ active: currentStep >= 1, completed: currentStep > 1 }">
             <div class="step-circle">
               <div v-if="currentStep > 1" class="step-check">✓</div>
               <div v-else-if="currentStep === 1" class="step-loading"></div>
-              <div v-else class="step-number">1</div>
+              <div v-else>1</div>
             </div>
-            <span>Syncing Balance</span>
+            <span>Sync</span>
           </div>
 
           <div class="step-connector" :class="{ active: currentStep > 1 }"></div>
@@ -54,29 +46,29 @@
             <div class="step-circle">
               <div v-if="currentStep > 2" class="step-check">✓</div>
               <div v-else-if="currentStep === 2" class="step-loading"></div>
-              <div v-else class="step-number">2</div>
+              <div v-else>2</div>
             </div>
-            <span>Loading Tokens</span>
+            <span>Tokens</span>
           </div>
 
           <div class="step-connector" :class="{ active: currentStep > 2 }"></div>
 
-          <div class="step" :class="{ active: currentStep >= 3, completed: currentStep > 3 }">
+          <div class="step" :class="{ active: currentStep >= 3 }">
             <div class="step-circle">
               <div v-if="currentStep >= 3" class="step-check">✓</div>
-              <div v-else class="step-number">3</div>
+              <div v-else>3</div>
             </div>
-            <span>Complete</span>
+            <span>Done</span>
           </div>
         </div>
       </div>
-      
+
       <!-- 错误状态 -->
       <div v-if="error" class="error-section">
         <div class="error-icon">
           <i class="ri-error-warning-line"></i>
         </div>
-        <h2>Refresh Failed</h2>
+        <h2>Loading Failed</h2>
         <p class="error-message">{{ error }}</p>
         <div class="error-actions">
           <button class="retry-btn" @click="retryRefresh">
@@ -84,7 +76,7 @@
             Retry
           </button>
           <button class="skip-btn" @click="skipToHome">
-            Skip & Continue
+            Skip
           </button>
         </div>
       </div>
@@ -96,7 +88,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useWalletStore } from '@shared/stores/wallet'
-import { APP_CONFIG } from '@shared/constants'
+import { APP_CONFIG, CHAIN_CONFIG } from '@shared/constants'
 
 const router = useRouter()
 const route = useRoute()
@@ -112,6 +104,11 @@ const isRefreshing = ref(false)
 const formatAddress = (address: string) => {
   if (!address) return ''
   return `${address.slice(0, 6)}...${address.slice(-4)}`
+}
+
+// 获取链的友好名称
+const getChainName = (chainCode: string) => {
+  return (CHAIN_CONFIG as any)[chainCode]?.name || chainCode
 }
 
 // 刷新钱包余额
@@ -323,7 +320,7 @@ onMounted(async () => {
 <style lang="scss" scoped>
 .wallet-import-loading-page {
   width: 375px;
-  height: 762px;
+  height: 600px; // 固定高度，适应插件环境
   background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
   color: #f1f5f9;
   display: flex;
@@ -334,31 +331,35 @@ onMounted(async () => {
 
 .loading-container {
   text-align: center;
-  padding: 40px 24px;
+  padding: 20px 24px;
   max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
 }
 
 // 成功图标
 .success-icon {
-  width: 80px;
-  height: 80px;
+  width: 60px;
+  height: 60px;
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 24px;
-  
+  margin: 0 auto 16px;
+
   i {
-    font-size: 40px;
+    font-size: 28px;
     color: white;
   }
 }
 
 h1 {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
-  margin: 0 0 32px 0;
+  margin: 0 0 20px 0;
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -367,37 +368,29 @@ h1 {
 
 // 钱包信息
 .wallet-info {
-  margin-bottom: 40px;
+  margin-bottom: 24px;
 }
 
 .wallet-card {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 20px;
+  gap: 12px;
+  padding: 16px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
+  border-radius: 12px;
   backdrop-filter: blur(10px);
 }
 
-.wallet-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
 .wallet-placeholder {
-  width: 48px;
-  height: 48px;
+  width: 36px;
+  height: 36px;
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 600;
   color: white;
   flex-shrink: 0;
@@ -406,21 +399,14 @@ h1 {
 .wallet-details {
   flex: 1;
   text-align: left;
-  
+
   h3 {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
     margin: 0 0 4px 0;
     color: #f1f5f9;
   }
-  
-  .wallet-chain {
-    font-size: 14px;
-    color: #6366f1;
-    font-weight: 500;
-    margin: 0 0 4px 0;
-  }
-  
+
   .wallet-address {
     font-size: 12px;
     color: #94a3b8;
@@ -431,43 +417,21 @@ h1 {
 
 // Loading部分
 .loading-section {
-  margin-bottom: 32px;
+  margin-bottom: 20px;
 }
 
 .main-loading-spinner {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
 .spinner-ring {
-  width: 48px;
-  height: 48px;
-  position: relative;
+  width: 36px;
+  height: 36px;
   border: 3px solid rgba(99, 102, 241, 0.2);
-  border-radius: 50%;
-  animation: spin 2s linear infinite;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: -3px;
-    left: -3px;
-    right: -3px;
-    bottom: -3px;
-    border: 3px solid transparent;
-    border-top: 3px solid #6366f1;
-    border-radius: 50%;
-    animation: spin 1.5s linear infinite reverse;
-  }
-}
-
-.spinner-inner {
-  width: 100%;
-  height: 100%;
-  border: 2px solid transparent;
-  border-top: 2px solid #8b5cf6;
+  border-top: 3px solid #6366f1;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -478,17 +442,10 @@ h1 {
 }
 
 h2 {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
-  margin: 0 0 12px 0;
+  margin: 0 0 20px 0;
   color: #f1f5f9;
-}
-
-.loading-description {
-  font-size: 14px;
-  color: #94a3b8;
-  line-height: 1.5;
-  margin: 0 0 32px 0;
 }
 
 // 进度步骤
@@ -496,8 +453,7 @@ h2 {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 16px;
-  margin-top: 40px;
+  gap: 12px;
   padding: 0 20px;
 }
 
@@ -505,11 +461,11 @@ h2 {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   opacity: 0.4;
   transition: all 0.3s ease;
   flex: 1;
-  max-width: 80px;
+  max-width: 60px;
 
   &.active {
     opacity: 1;
@@ -518,7 +474,6 @@ h2 {
       background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
       color: white;
       border: 2px solid #6366f1;
-      box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
     }
   }
 
@@ -529,12 +484,11 @@ h2 {
       background: linear-gradient(135deg, #10b981 0%, #059669 100%);
       color: white;
       border: 2px solid #10b981;
-      box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
     }
   }
 
   span {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 500;
     color: #94a3b8;
     text-align: center;
@@ -548,8 +502,8 @@ h2 {
 }
 
 .step-circle {
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   background: rgba(255, 255, 255, 0.1);
   border: 2px solid rgba(255, 255, 255, 0.2);
   border-radius: 50%;
@@ -557,25 +511,19 @@ h2 {
   align-items: center;
   justify-content: center;
   color: #94a3b8;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   transition: all 0.3s ease;
-  position: relative;
-}
-
-.step-number {
-  font-size: 14px;
-  font-weight: 600;
 }
 
 .step-check {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: bold;
 }
 
 .step-loading {
-  width: 16px;
-  height: 16px;
+  width: 12px;
+  height: 12px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top: 2px solid white;
   border-radius: 50%;
@@ -590,63 +538,58 @@ h2 {
 
   &.active {
     background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
-    box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
   }
-}
-
-.step span {
-  font-size: 12px;
-  color: #94a3b8;
-  font-weight: 500;
 }
 
 // 错误部分
 .error-section {
   .error-icon {
-    width: 60px;
-    height: 60px;
+    width: 50px;
+    height: 50px;
     background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 20px;
-    
+    margin: 0 auto 16px;
+
     i {
-      font-size: 28px;
+      font-size: 24px;
       color: white;
     }
   }
-  
+
   h2 {
     color: #ef4444;
     margin-bottom: 12px;
+    font-size: 18px;
   }
-  
+
   .error-message {
-    font-size: 14px;
+    font-size: 13px;
     color: #94a3b8;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
+    line-height: 1.4;
   }
 }
 
 .error-actions {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   justify-content: center;
 }
 
 .retry-btn, .skip-btn {
-  padding: 12px 20px;
+  padding: 10px 16px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
-  gap: 6px;
-  
+  gap: 4px;
+
   &:hover {
     transform: translateY(-1px);
   }
@@ -656,17 +599,13 @@ h2 {
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   color: white;
   border: none;
-  
-  &:hover {
-    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
-  }
 }
 
 .skip-btn {
   background: rgba(255, 255, 255, 0.1);
   color: #94a3b8;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  
+
   &:hover {
     background: rgba(255, 255, 255, 0.15);
     color: #f1f5f9;

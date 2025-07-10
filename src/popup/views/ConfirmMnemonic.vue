@@ -1,70 +1,72 @@
 <template>
-  <div class="confirm-mnemonic-page">
-    <div class="header">
-      <button class="back-btn" @click="goBack">
-        <i class="ri-arrow-left-line"></i>
-      </button>
-      <h1>Confirm Seed Phrase</h1>
-      <div class="placeholder"></div>
-    </div>
-    
-    <div class="content">
-      <div class="description">
-        <h2>Verify Your Seed Phrase</h2>
-        <p>Please enter your 12-word seed phrase to confirm you've saved it correctly.</p>
-      </div>
-      
-      <div class="mnemonic-input">
-        <div class="word-grid">
-          <div 
-            v-for="(word, index) in inputWords" 
-            :key="index"
-            class="word-input-container"
-          >
-            <label>{{ index + 1 }}</label>
-            <input 
-              v-model="inputWords[index]"
-              type="text"
-              :placeholder="`Word ${index + 1}`"
-              class="word-input"
-              @input="validateInput"
-              autocomplete="off"
-              spellcheck="false"
-            />
+  <ResponsiveLayout
+    title="Confirm Seed Phrase"
+    :show-header="true"
+    :show-footer="false"
+    :show-back-button="true"
+    :scrollable="true"
+    padding="0"
+    @back="goBack"
+  >
+    <div class="confirm-mnemonic-container">
+      <div class="content-area">
+        <div class="description">
+          <h2>Verify Your Seed Phrase</h2>
+          <p>Please enter your 12-word seed phrase to confirm you've saved it correctly.</p>
+        </div>
+
+        <div class="mnemonic-input">
+          <div class="word-grid">
+            <div
+              v-for="(word, index) in inputWords"
+              :key="index"
+              class="word-input-container"
+            >
+              <label>{{ index + 1 }}</label>
+              <input
+                v-model="inputWords[index]"
+                type="text"
+                :placeholder="`Word ${index + 1}`"
+                class="word-input"
+                @input="validateInput"
+                autocomplete="off"
+                spellcheck="false"
+              />
+            </div>
+          </div>
+
+          <div class="input-actions">
+            <button class="paste-btn" @click="pasteMnemonic" :disabled="pasting">
+              <i v-if="pasting" class="ri-loader-4-line animate-spin"></i>
+              <i v-else class="ri-clipboard-line"></i>
+              {{ pasting ? 'Pasting...' : 'Paste from Clipboard' }}
+            </button>
+            <button class="clear-btn" @click="clearInput">
+              <i class="ri-delete-bin-line"></i>
+              Clear All
+            </button>
           </div>
         </div>
-        
-        <div class="input-actions">
-          <button class="paste-btn" @click="pasteMnemonic">
-            <i class="ri-clipboard-line"></i>
-            Paste from Clipboard
-          </button>
-          <button class="clear-btn" @click="clearInput">
-            <i class="ri-delete-bin-line"></i>
-            Clear All
-          </button>
+      
+        <div class="error-message" v-if="error">
+          <i class="ri-error-warning-line"></i>
+          {{ error }}
         </div>
       </div>
-      
-      <div class="error-message" v-if="error">
-        <i class="ri-error-warning-line"></i>
-        {{ error }}
+
+      <!-- Fixed Bottom Button -->
+      <div class="bottom-section">
+        <button
+          class="confirm-btn"
+          :disabled="!isValidInput"
+          @click="confirmMnemonic"
+        >
+          <span>Continue</span>
+          <i class="ri-arrow-right-line"></i>
+        </button>
       </div>
-
-
     </div>
-    
-    <div class="footer">
-      <button
-        class="confirm-btn"
-        :disabled="!isValidInput"
-        @click="confirmMnemonic"
-      >
-        <span>Continue</span>
-        <i class="ri-arrow-right-line"></i>
-      </button>
-    </div>
-  </div>
+  </ResponsiveLayout>
 </template>
 
 <script setup lang="ts">
@@ -73,6 +75,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@shared/stores/auth'
 import { useWalletStore } from '@shared/stores/wallet'
 import { APP_CONFIG } from '@shared/constants'
+import ResponsiveLayout from '@/popup/components/ResponsiveLayout.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -81,6 +84,7 @@ const walletStore = useWalletStore()
 // 响应式数据
 const inputWords = ref<string[]>(Array(12).fill(''))
 const submitting = ref(false)
+const pasting = ref(false)
 const error = ref('')
 const originalMnemonic = ref('')
 const selectedChain = ref('')
@@ -108,18 +112,81 @@ const validateInput = () => {
 
 // 从剪贴板粘贴
 const pasteMnemonic = async () => {
+  if (pasting.value) return // 防止重复点击
+
   try {
-    const text = await navigator.clipboard.readText()
-    const words = text.trim().split(/\s+/)
-    
-    if (words.length === 12) {
-      inputWords.value = words.map(word => word.toLowerCase().trim())
-      validateInput()
-    } else {
-      error.value = 'Please paste a valid 12-word seed phrase'
+    // 设置加载状态
+    pasting.value = true
+    error.value = ''
+
+    // 检查剪贴板 API 是否可用
+    if (!navigator.clipboard) {
+      // 备用方案：使用传统的 execCommand (已废弃但仍可用)
+      try {
+        const textArea = document.createElement('textarea')
+        textArea.style.position = 'fixed'
+        textArea.style.left = '-999999px'
+        textArea.style.top = '-999999px'
+        document.body.appendChild(textArea)
+        textArea.focus()
+        document.execCommand('paste')
+        const text = textArea.value
+        document.body.removeChild(textArea)
+
+        if (text) {
+          processPastedText(text)
+        } else {
+          error.value = 'No text found in clipboard. Please copy your seed phrase first.'
+        }
+      } catch (fallbackErr) {
+        error.value = 'Clipboard access not available. Please type your seed phrase manually.'
+      }
+      return
     }
+
+    // 使用现代剪贴板 API
+    const text = await navigator.clipboard.readText()
+    processPastedText(text)
+
   } catch (err) {
-    error.value = 'Failed to read from clipboard'
+    console.error('Clipboard error:', err)
+    if (err.name === 'NotAllowedError') {
+      error.value = 'Clipboard access denied. Please allow clipboard permissions or type manually.'
+    } else if (err.name === 'NotFoundError') {
+      error.value = 'No text found in clipboard. Please copy your seed phrase first.'
+    } else {
+      error.value = 'Failed to read from clipboard. Please type your seed phrase manually.'
+    }
+  } finally {
+    // 清除加载状态
+    pasting.value = false
+  }
+}
+
+// 处理粘贴的文本
+const processPastedText = (text: string) => {
+  if (!text || !text.trim()) {
+    error.value = 'No text found in clipboard. Please copy your seed phrase first.'
+    return
+  }
+
+  const words = text.trim().split(/\s+/).filter(word => word.length > 0)
+
+  if (words.length === 12) {
+    inputWords.value = words.map(word => word.toLowerCase().trim())
+    validateInput()
+    // 成功提示
+    setTimeout(() => {
+      if (!error.value) {
+        // 可以添加成功提示，但这里我们保持简洁
+      }
+    }, 100)
+  } else if (words.length > 12) {
+    error.value = `Too many words (${words.length}). Please paste exactly 12 words.`
+  } else if (words.length > 0) {
+    error.value = `Not enough words (${words.length}). Please paste exactly 12 words.`
+  } else {
+    error.value = 'Invalid seed phrase format. Please paste 12 words separated by spaces.'
   }
 }
 
@@ -175,59 +242,27 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.confirm-mnemonic-page {
-  width: 375px;
-  height: 762px;
-  background: #0F172A;
-  color: #f1f5f9;
+.confirm-mnemonic-container {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 24px;
+  min-height: calc(100vh - 120px);
 }
 
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid #334155;
-  
-  .back-btn {
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 10px;
-    color: #f1f5f9;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    
-    &:hover {
-      background: rgba(255, 255, 255, 0.15);
-    }
-  }
-  
-  h1 {
-    font-size: 18px;
-    font-weight: 600;
-    margin: 0;
-  }
-  
-  .placeholder {
-    width: 40px;
-  }
-}
-
-.content {
+.content-area {
   flex: 1;
-  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
   overflow-y: auto;
+  margin-bottom: 24px;
 }
 
 .description {
   text-align: center;
-  margin-bottom: 32px;
   
   h2 {
     font-size: 20px;
@@ -303,10 +338,18 @@ onMounted(() => {
       gap: 6px;
       transition: all 0.3s ease;
       
-      &:hover {
+      &:hover:not(:disabled) {
         background: rgba(255, 255, 255, 0.08);
         border-color: #6366f1;
         color: #f1f5f9;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: rgba(255, 255, 255, 0.03);
+        border-color: rgba(255, 255, 255, 0.05);
+        color: #64748b;
       }
     }
   }
@@ -331,35 +374,103 @@ onMounted(() => {
   }
 }
 
-.footer {
-  padding: 20px;
-  border-top: 1px solid #334155;
-  
-  .confirm-btn {
+.bottom-section {
+  flex-shrink: 0;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.confirm-btn {
+  width: 100%;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.2);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
     width: 100%;
-    background: #6366f1;
-    color: white;
-    border: none;
-    padding: 16px;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: all 0.3s ease;
-    
-    &:hover:not(:disabled) {
-      background: #5856d6;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+
+    &::before {
+      left: 100%;
     }
-    
-    &:disabled {
-      background: #374151;
-      color: #9ca3af;
-      cursor: not-allowed;
-    }
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+  }
+}
+
+// 响应式设计
+@media (max-width: 480px) {
+  .confirm-mnemonic-container {
+    padding: 20px;
+    min-height: calc(100vh - 100px);
+  }
+
+  .content-area {
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  .bottom-section {
+    padding-top: 12px;
+  }
+
+  .confirm-btn {
+    padding: 14px 20px;
+    font-size: 15px;
+  }
+}
+
+// 弹窗模式特殊样式
+:global(.layout-popup) .confirm-mnemonic-container {
+  min-height: calc(600px - 120px);
+  padding: 20px;
+
+  .content-area {
+    gap: 18px;
+    margin-bottom: 16px;
+  }
+
+  .bottom-section {
+    padding-top: 12px;
+  }
+
+  .confirm-btn {
+    padding: 14px 20px;
+    font-size: 15px;
   }
 }
 

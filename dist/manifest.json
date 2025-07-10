@@ -12,13 +12,16 @@
   },
   
   "action": {
-    "default_popup": "src/popup/index.html",
     "default_title": "Riftwallet",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     }
+  },
+
+  "side_panel": {
+    "default_path": "src/sidepanel/index.html"
   },
   
   "background": {
@@ -42,11 +45,18 @@
     "activeTab",
     "scripting",
     "alarms",
-    "notifications"
+    "notifications",
+    "sidePanel",
+    "windows",
+    "tabs",
+    "contextMenus"
   ],
   
   "host_permissions": [
+    "http://localhost:8000/*",
+    "http://127.0.0.1:8000/*",
     "http://192.168.3.56:8000/*",
+    "https://www.riftwallet.io/*",
     "https://api.coingecko.com/*",
     "https://api.cryptocompare.com/*"
   ],
@@ -62,7 +72,7 @@
   ],
   
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' http://192.168.3.56:8000 https://api.coingecko.com https://api.cryptocompare.com;"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' http://localhost:8000 http://127.0.0.1:8000 http://192.168.3.56:8000 https://www.riftwallet.io https://api.coingecko.com https://api.cryptocompare.com;"
   },
   
   "externally_connectable": {

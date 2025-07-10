@@ -17,7 +17,7 @@
         </div>
         <div class="wallet-details">
           <span class="wallet-name">{{ currentWallet?.name || 'No Wallet' }}</span>
-          <span class="wallet-chain">{{ currentWallet?.chain || '' }}</span>
+          <span class="wallet-chain">{{ currentWallet ? getChainName(currentWallet.chain) : '' }}</span>
         </div>
       </div>
       <i class="ri-arrow-down-s-line dropdown-icon" :class="{ 'rotated': showDropdown }"></i>
@@ -51,7 +51,7 @@
             <div class="wallet-info">
               <div class="wallet-header">
                 <span class="wallet-name">{{ wallet.name }}</span>
-                <span class="wallet-chain-badge">{{ wallet.chain }}</span>
+                <span class="wallet-chain-badge">{{ getChainName(wallet.chain) }}</span>
               </div>
               <div class="wallet-address-row">
                 <span class="wallet-address">{{ formatLongAddress(wallet.address) }}</span>
@@ -96,6 +96,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useWalletStore } from '@shared/stores/wallet'
+import { CHAIN_CONFIG } from '@shared/constants'
 import type { Wallet } from '@shared/types'
 
 const router = useRouter()
@@ -108,6 +109,11 @@ const copiedWalletId = ref<string | null>(null)
 // 计算属性
 const wallets = computed(() => walletStore.wallets)
 const currentWallet = computed(() => walletStore.currentWallet)
+
+// 获取链的友好名称
+const getChainName = (chainCode: string) => {
+  return (CHAIN_CONFIG as any)[chainCode]?.name || chainCode
+}
 
 // 方法
 const toggleDropdown = () => {

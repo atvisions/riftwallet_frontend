@@ -14,6 +14,7 @@
             <button class="header-icon-btn" @click="openSearch">
               <i class="ri-search-line"></i>
             </button>
+            <SidePanelToggle />
             <button class="header-icon-btn" @click="toggleFullscreen">
               <i class="ri-fullscreen-line"></i>
             </button>
@@ -27,31 +28,25 @@
     
     <!-- 主要内容区域 -->
     <div class="main-content">
-      <!-- 价格图表区域 -->
-      <div class="relative mb-6">
-        <canvas ref="priceChart" class="absolute top-0 left-0 w-full h-[180px] -z-10"></canvas>
-        <div class="pt-2">
-          <!-- 总余额显示 -->
-          <div class="balance-container">
+      <!-- 价格图表区域 - 超紧凑版 -->
+      <div class="relative mb-3">
+        <canvas ref="priceChart" class="absolute top-0 left-0 w-full h-[80px] -z-10"></canvas>
+        <div class="pt-1">
+          <!-- 总余额显示 - 超紧凑版 -->
+          <div class="balance-container ultra-compact">
             <!-- 背景装饰 -->
             <div class="balance-background">
               <div class="bg-circle bg-circle-1"></div>
               <div class="bg-circle bg-circle-2"></div>
-              <div class="bg-circle bg-circle-3"></div>
-              <div class="bg-lines">
-                <div class="bg-line bg-line-1"></div>
-                <div class="bg-line bg-line-2"></div>
-                <div class="bg-line bg-line-3"></div>
-              </div>
             </div>
 
             <div class="balance-main">
               <div class="balance-content">
-                <div class="balance-amount">{{ formatCurrency(totalBalance) }}</div>
-                <div class="balance-subtitle">
+                <div class="balance-amount ultra-compact">{{ formatCurrency(totalBalance) }}</div>
+                <div class="balance-subtitle ultra-compact">
                   Total Balance
                   <button
-                    class="manual-refresh-btn"
+                    class="manual-refresh-btn compact"
                     @click="handleManualRefresh"
                     :disabled="isManualRefreshing"
                     :title="isManualRefreshing ? 'Refreshing...' : 'Refresh Balance'"
@@ -64,58 +59,57 @@
                 </div>
               </div>
             </div>
-            <div class="balance-change" v-if="totalChangePercentage">
+            <div class="balance-change ultra-compact" v-if="totalChangePercentage">
               <div class="change-indicator" :class="getBalanceChangeColor(totalChangePercentage)">
                 <i :class="getBalanceChangeIcon(totalChangePercentage)" class="change-icon"></i>
                 <span class="change-percentage">{{ formatPercentage(totalChangePercentage) }}</span>
                 <span class="change-amount">({{ formatChangeAmount(totalChange24h) }})</span>
               </div>
-
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 操作按钮 -->
-      <div class="grid grid-cols-5 gap-2 mb-6">
+      <!-- 操作按钮 - 超紧凑版 -->
+      <div class="grid grid-cols-5 gap-1 mb-3">
         <button class="flex flex-col items-center" @click="$router.push('/send')">
-          <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-1">
-            <i class="ri-send-plane-line text-primary text-xl"></i>
+          <div class="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center mb-0.5">
+            <i class="ri-send-plane-line text-primary text-base"></i>
           </div>
-          <span class="text-xs">Send</span>
+          <span class="text-[9px]">Send</span>
         </button>
         <button class="flex flex-col items-center" @click="$router.push('/receive')">
-          <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-1">
-            <i class="ri-download-line text-primary text-xl"></i>
+          <div class="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center mb-0.5">
+            <i class="ri-download-line text-primary text-base"></i>
           </div>
-          <span class="text-xs">Receive</span>
+          <span class="text-[9px]">Receive</span>
         </button>
         <button class="flex flex-col items-center">
-          <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-1">
-            <i class="ri-money-dollar-circle-line text-primary text-xl"></i>
+          <div class="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center mb-0.5">
+            <i class="ri-money-dollar-circle-line text-primary text-base"></i>
           </div>
-          <span class="text-xs">Earn</span>
+          <span class="text-[9px]">Earn</span>
         </button>
         <button class="flex flex-col items-center">
-          <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-1">
-            <i class="ri-gas-station-line text-primary text-xl"></i>
+          <div class="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center mb-0.5">
+            <i class="ri-gas-station-line text-primary text-base"></i>
           </div>
-          <span class="text-xs">Get Gas</span>
+          <span class="text-[9px]">Gas</span>
         </button>
         <button class="flex flex-col items-center" @click="$router.push('/history')">
-          <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-1">
-            <i class="ri-history-line text-primary text-xl"></i>
+          <div class="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center mb-0.5">
+            <i class="ri-history-line text-primary text-base"></i>
           </div>
-          <span class="text-xs">History</span>
+          <span class="text-[9px]">History</span>
         </button>
       </div>
 
-      <!-- 标签页 -->
-      <div class="flex space-x-6 text-sm text-gray-400 border-b border-dark-lighter mb-4 overflow-x-auto">
-        <button 
-          v-for="tab in tabs" 
+      <!-- 标签页 - 紧凑版 -->
+      <div class="flex space-x-4 text-sm text-gray-400 border-b border-dark-lighter mb-2 overflow-x-auto">
+        <button
+          v-for="tab in tabs"
           :key="tab.key"
-          :class="['py-2 px-1', { 'tab-active': activeTab === tab.key }]"
+          :class="['py-1 px-1 tab-button', { 'tab-active': activeTab === tab.key }]"
           @click="activeTab = tab.key"
         >
           {{ tab.label }}
@@ -181,20 +175,20 @@
       </div>
       
       <!-- 其他标签页内容 -->
-      <div v-else class="flex justify-center items-center h-[380px] text-gray-500">
+      <div v-else class="flex justify-center items-center h-[300px] text-gray-500">
         <div class="text-center">
-          <i class="ri-tools-line text-4xl mb-2"></i>
+          <i class="ri-tools-line text-3xl mb-2"></i>
           <p>Coming Soon</p>
         </div>
       </div>
     </div>
     
     <!-- 底部导航 -->
-    <nav class="fixed bottom-0 w-full bg-dark border-t border-dark-lighter">
+    <nav class="fixed bottom-0 w-full bg-dark-deeper border-t-2 border-dark-lighter shadow-lg">
       <div class="grid grid-cols-5 h-[60px]">
         <button class="flex flex-col items-center justify-center">
-          <i class="ri-home-5-line text-gray-400"></i>
-          <span class="text-[10px] mt-1 text-gray-400">Home</span>
+          <i class="ri-home-5-line text-primary"></i>
+          <span class="text-[10px] mt-1 text-primary">Home</span>
         </button>
         <button class="flex flex-col items-center justify-center">
           <i class="ri-line-chart-line text-gray-400"></i>
@@ -228,6 +222,7 @@ import { WalletToken } from '@shared/types'
 import { getSessionRemainingTime, formatRemainingTime } from '@shared/utils/session-manager'
 import * as echarts from 'echarts'
 import WalletSelector from '../components/WalletSelector.vue'
+import SidePanelToggle from '../components/SidePanelToggle.vue'
 
 const router = useRouter()
 const walletStore = useWalletStore()
@@ -588,7 +583,7 @@ onUnmounted(() => {
 <style lang="scss" scoped>
 .wallet-home {
   width: 375px;
-  height: 762px;
+  height: 600px; // 固定高度，适应插件环境
   background: #0F172A;
   color: #f1f5f9;
 }
@@ -607,6 +602,10 @@ onUnmounted(() => {
   background-color: var(--dark);
 }
 
+.bg-dark-deeper {
+  background-color: #0f172a;
+}
+
 .bg-dark-lighter {
   background-color: var(--dark-lighter);
 }
@@ -623,10 +622,22 @@ onUnmounted(() => {
   border-color: var(--dark-lighter);
 }
 
+// 标签页样式
+.tab-button {
+  position: relative;
+  transition: all 0.3s ease;
+  border-bottom: 2px solid transparent;
+
+  &:hover {
+    color: #94a3b8;
+  }
+}
+
 // 标签页激活状态
 .tab-active {
-  color: var(--primary);
+  color: var(--primary) !important;
   border-bottom: 2px solid var(--primary);
+  font-weight: 600;
 }
 
 // 代币列表滚动条隐藏
@@ -927,6 +938,16 @@ button:hover {
   padding: 24px 0;
   position: relative;
   overflow: hidden;
+
+  &.compact {
+    gap: 12px;
+    padding: 16px 0;
+  }
+
+  &.ultra-compact {
+    gap: 8px;
+    padding: 12px 0;
+  }
 }
 
 .balance-background {
@@ -1135,18 +1156,18 @@ button:hover {
   margin-left: 2px;
 }
 
-// 代币logo样式
+// 代币logo样式 - 紧凑版
 .token-logo-container {
   position: relative;
-  width: 40px;
-  height: 40px;
-  margin-right: 12px;
+  width: 36px;
+  height: 36px;
+  margin-right: 10px;
   flex-shrink: 0;
 }
 
 .token-logo {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   object-fit: cover;
   transition: opacity 0.3s ease;
@@ -1157,8 +1178,8 @@ button:hover {
   position: absolute;
   top: 0;
   left: 0;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   display: flex;
@@ -1180,10 +1201,10 @@ button:hover {
 .token-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px;
   overflow-y: auto;
-  height: 380px;
-  padding-top: 8px;
+  height: 340px;
+  padding-top: 4px;
   padding-bottom: 64px;
 
   // 自定义滚动条
@@ -1210,10 +1231,10 @@ button:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px;
+  padding: 10px 12px;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
 
@@ -1250,7 +1271,7 @@ button:hover {
 }
 
 .token-name {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   color: #f1f5f9;
   letter-spacing: 0.02em;
@@ -1269,7 +1290,7 @@ button:hover {
 }
 
 .token-value {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   color: #94a3b8;
 }
@@ -1313,7 +1334,7 @@ button:hover {
 }
 
 .main-content {
-  margin-top: 70px;
+  margin-top: 55px;
   padding: 0 16px;
 }
 
@@ -1370,6 +1391,16 @@ button:hover {
   text-align: center;
   line-height: 1.1;
   margin-bottom: 4px;
+
+  &.compact {
+    font-size: 28px;
+    margin-bottom: 2px;
+  }
+
+  &.ultra-compact {
+    font-size: 24px;
+    margin-bottom: 1px;
+  }
 }
 
 .balance-subtitle {
@@ -1378,6 +1409,14 @@ button:hover {
   font-weight: 500;
   text-align: center;
   opacity: 0.8;
+
+  &.compact {
+    font-size: 12px;
+  }
+
+  &.ultra-compact {
+    font-size: 11px;
+  }
 }
 
 /* 余额变化区域 */
@@ -1387,6 +1426,16 @@ button:hover {
   justify-content: center;
   gap: 12px;
   margin-top: 8px;
+
+  &.compact {
+    margin-top: 6px;
+    gap: 8px;
+  }
+
+  &.ultra-compact {
+    margin-top: 4px;
+    gap: 6px;
+  }
 }
 
 // 手动刷新按钮样式

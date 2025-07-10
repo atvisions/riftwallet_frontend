@@ -2,14 +2,19 @@
 
 // 根据环境选择 API 基础 URL
 const getApiBaseUrl = () => {
-  // 强制使用本地开发环境，因为生产服务器 IP 被 Moralis 封了
-  return '/api/v1'
+  // 检查是否在插件环境中
+  if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id) {
+    // 插件环境，连接本地服务器
+    return 'http://localhost:8000/api/v1'
+  }
 
-  // 原来的逻辑（暂时注释）
-  // if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-  //   return '/api/v1'
-  // }
-  // return 'https://www.riftwallet.io/api/v1'
+  // 检查是否在本地开发环境
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return '/api/v1'
+  }
+
+  // 默认使用本地服务器
+  return 'http://localhost:8000/api/v1'
 }
 
 export const APP_CONFIG = {
@@ -86,7 +91,7 @@ export const CHAIN_CONFIG = {
     color: '#627EEA'
   },
   BSC: {
-    name: 'BNB Smart Chain',
+    name: 'BNB Chain',
     symbol: 'BNB',
     decimals: 18,
     type: 'EVM',
@@ -142,7 +147,7 @@ export const CHAIN_CONFIG = {
     color: '#121212'
   },
   MANTA: {
-    name: 'Manta Pacific',
+    name: 'Manta',
     symbol: 'ETH',
     decimals: 18,
     type: 'EVM',
@@ -193,6 +198,8 @@ export const STORAGE_KEYS = {
 export const MESSAGE_TYPES = {
   // Background <-> Popup
   GET_WALLETS: 'GET_WALLETS',
+  GET_CURRENT_WALLET: 'GET_CURRENT_WALLET',
+  SET_CURRENT_WALLET: 'SET_CURRENT_WALLET',
   CREATE_WALLET: 'CREATE_WALLET',
   IMPORT_WALLET: 'IMPORT_WALLET',
   DELETE_WALLET: 'DELETE_WALLET',
