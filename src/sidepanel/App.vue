@@ -1,13 +1,23 @@
 <template>
   <div class="sidepanel-app">
-    <div class="sidepanel-container">
+    <!-- 加载状态 -->
+    <div v-if="authStore.loading || !isInitialized" class="loading-screen">
+      <div class="loading-content">
+        <img src="/icons/icon128.png" alt="Riftwallet" class="loading-logo">
+        <div class="loading-spinner"></div>
+        <p>Initializing Riftwallet...</p>
+      </div>
+    </div>
+
+    <!-- 主要内容 -->
+    <div v-else class="sidepanel-container">
       <router-view />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@shared/stores/auth'
 import { useWalletStore } from '@shared/stores/wallet'
@@ -15,6 +25,9 @@ import { useWalletStore } from '@shared/stores/wallet'
 const router = useRouter()
 const authStore = useAuthStore()
 const walletStore = useWalletStore()
+
+// 初始化状态
+const isInitialized = ref(false)
 
 onMounted(async () => {
   console.log('Riftwallet Side Panel App mounted')
@@ -54,10 +67,17 @@ onMounted(async () => {
     } else {
       // 未设置密码，跳转到设置密码页面
       console.log('No password set, redirecting to setup password')
-      router.replace('/setup-password')
+      await router.replace('/setup-password')
     }
+
+    // 等待路由跳转完成后再设置初始化完成
+    await router.isReady()
+    isInitialized.value = true
+    console.log('Side Panel initialization completed')
   } catch (error) {
     console.error('Failed to initialize side panel app:', error)
+    // 即使出错也要设置初始化完成，避免永远卡在加载状态
+    isInitialized.value = true
   }
 })
 </script>
@@ -72,6 +92,49 @@ onMounted(async () => {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+/* 加载状态样式 */
+.loading-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: var(--dark);
+}
+
+.loading-content {
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.loading-logo {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border);
+  border-top: 3px solid var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-content p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-secondary);
 }
 
 .sidepanel-container {
@@ -128,7 +191,7 @@ onMounted(async () => {
   height: 100vh;
   max-width: none !important;
   margin: 0 !important;
-  padding: 0 16px;
+  padding: 0;
 }
 
 /* 表单容器样式 */
@@ -136,7 +199,7 @@ onMounted(async () => {
   width: 100%;
   max-width: 400px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 0;
 }
 
 /* 卡片样式调整 */
@@ -151,6 +214,6 @@ onMounted(async () => {
   width: 100%;
   max-width: 400px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0;
 }
 </style>

@@ -1,7 +1,7 @@
 <template>
   <div id="app" class="wallet-app">
     <!-- 加载状态 -->
-    <div v-if="authStore.loading" class="loading-screen">
+    <div v-if="authStore.loading || !isInitialized" class="loading-screen">
       <div class="loading-content">
         <img src="/icons/icon128.png" alt="Riftwallet" class="loading-logo">
         <div class="loading-spinner"></div>
@@ -15,7 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, watch } from 'vue'
+import { onMounted, onUnmounted, watch, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useWalletStore } from '@shared/stores/wallet'
 import { useAuthStore } from '@shared/stores/auth'
@@ -25,13 +25,13 @@ const router = useRouter()
 const walletStore = useWalletStore()
 const authStore = useAuthStore()
 
-// 防止重复初始化的标志
-let isInitialized = false
+// 初始化状态
+const isInitialized = ref(false)
 
 onMounted(async () => {
   try {
     // 防止重复初始化
-    if (isInitialized) {
+    if (isInitialized.value) {
       console.log('App already initialized, skipping')
       return
     }
@@ -69,17 +69,17 @@ onMounted(async () => {
           } else {
             // 没有钱包，跳转到钱包选择页面
             console.log('No wallets found, redirecting to wallet choice')
-            router.replace('/wallet-choice')
+            await router.replace('/wallet-choice')
           }
         } else {
           // 已设置密码但会话过期，需要验证密码
           console.log('Password set but session expired, redirecting to verify password')
-          router.replace('/verify-password')
+          await router.replace('/verify-password')
         }
       } else {
         // 未设置密码，跳转到设置密码页面
         console.log('No password set, redirecting to setup password')
-        router.replace('/setup-password')
+        await router.replace('/setup-password')
       }
     } else {
       console.log('Skipping routing logic for non-root path:', currentPath)
@@ -91,10 +91,14 @@ onMounted(async () => {
       setupActivityRefresh()
     }
 
-    isInitialized = true
+    // 等待路由跳转完成后再设置初始化完成
+    await router.isReady()
+    isInitialized.value = true
     console.log('App initialization completed')
   } catch (error) {
     console.error('Failed to initialize app:', error)
+    // 即使出错也要设置初始化完成，避免永远卡在加载状态
+    isInitialized.value = true
   }
 })
 
@@ -122,7 +126,7 @@ watch(() => router.currentRoute.value.path, async (newPath, oldPath) => {
   }
 
   // 如果跳转到首页且已经初始化过，检查是否需要重新验证
-  if (newPath === '/' && isInitialized) {
+  if (newPath === '/' && isInitialized.value) {
     // 只有在会话过期的情况下才重新验证
     if (authStore.hasPaymentPassword && !authStore.isPasswordSessionValid) {
       console.log('Session expired, redirecting to verify password')
@@ -139,12 +143,18 @@ onUnmounted(() => {
 
 <style lang="scss">
 .wallet-app {
-  width: 375px;
-  height: 600px; // 固定高度，适应插件环境
-  background: #0F172A;
+  width: 375px !important;
+  height: 600px !important; // 固定高度，适应插件环境
+  background: #0F172A !important;
   color: #f1f5f9;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  overflow: hidden;
+  overflow: hidden !important;
+  min-width: 375px !important;
+  max-width: 375px !important;
+  min-height: 600px !important;
+  max-height: 600px !important;
+  position: relative !important;
+  display: block !important;
 }
 
 // 加载屏幕
@@ -192,15 +202,28 @@ onUnmounted(() => {
 
 // 全局样式重置
 * {
-  box-sizing: border-box;
+  box-sizing: border-box !important;
 }
 
-body, html {
-  margin: 0;
-  padding: 0;
-  width: 375px;
-  height: 600px; // 固定高度，适应插件环境
-  overflow: hidden;
+html {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 375px !important;
+  height: 600px !important;
+  overflow: hidden !important;
+  min-width: 375px !important;
+  max-width: 375px !important;
+}
+
+body {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 375px !important;
+  height: 600px !important; // 固定高度，适应插件环境
+  overflow: hidden !important;
+  min-width: 375px !important;
+  max-width: 375px !important;
+  background: #0F172A !important;
 }
 
 // 滚动条样式

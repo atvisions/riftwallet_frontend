@@ -3,30 +3,15 @@
     title="Riftwallet"
     :show-header="true"
     :show-footer="true"
-    mode="sidepanel"
     :scrollable="true"
   >
     <!-- 自定义头部 -->
     <template #header>
-      <div class="sidepanel-header">
-        <div class="header-left">
-          <div class="wallet-info">
-            <WalletSelector />
-          </div>
-        </div>
-        <div class="header-right">
-          <button @click="openSearch" class="header-btn" title="Search">
-            <i class="ri-search-line"></i>
-          </button>
-          <button @click="toggleFullscreen" class="header-btn" title="Fullscreen">
-            <i class="ri-fullscreen-line"></i>
-          </button>
-        </div>
-      </div>
+      <TopHeader page-type="home" />
     </template>
 
     <!-- 主要内容 -->
-    <div class="sidepanel-content">
+    <div class="home-content">
       <!-- 余额卡片 -->
       <div class="balance-card">
         <div class="balance-header">
@@ -153,28 +138,7 @@
 
     <!-- 底部导航 -->
     <template #footer>
-      <nav class="bottom-nav">
-        <router-link to="/" class="nav-item active">
-          <i class="ri-home-line"></i>
-          <span>Home</span>
-        </router-link>
-        <router-link to="/markets" class="nav-item">
-          <i class="ri-line-chart-line"></i>
-          <span>Markets</span>
-        </router-link>
-        <router-link to="/trade" class="nav-item">
-          <i class="ri-exchange-line"></i>
-          <span>Trade</span>
-        </router-link>
-        <router-link to="/discover" class="nav-item">
-          <i class="ri-compass-line"></i>
-          <span>Discover</span>
-        </router-link>
-        <router-link to="/settings" class="nav-item">
-          <i class="ri-settings-line"></i>
-          <span>Wallet</span>
-        </router-link>
-      </nav>
+      <BottomNavigation />
     </template>
   </ResponsiveLayout>
 </template>
@@ -187,7 +151,10 @@ import { useAuthStore } from '@shared/stores/auth'
 import { formatCurrency, formatPercentage } from '@shared/utils'
 import { WalletToken } from '@shared/types'
 import ResponsiveLayout from '../components/ResponsiveLayout.vue'
-import WalletSelector from '../components/WalletSelector.vue'
+import TopHeader from '../components/TopHeader.vue'
+import BottomNavigation from '../components/BottomNavigation.vue'
+
+// 移除了模式相关的代码，现在使用统一的样式
 
 const router = useRouter()
 const walletStore = useWalletStore()
@@ -197,6 +164,7 @@ const authStore = useAuthStore()
 const loading = ref(false)
 const isManualRefreshing = ref(false)
 const activeTab = ref<'tokens' | 'nfts'>('tokens')
+// 移除了不再需要的 isSidePanelMode 状态
 
 // 计算属性
 const currentWallet = computed(() => walletStore.currentWallet)
@@ -218,6 +186,8 @@ const totalChange24h = computed(() => {
 const totalChangePercentage = computed(() => {
   return currentWalletBalance.value?.total_change_percentage || '0'
 })
+
+// 移除了不再需要的侧边栏模式图标计算属性
 
 // 方法
 const formatTokenAmount = (balance: string, decimals: number) => {
@@ -264,21 +234,7 @@ const selectToken = (token: WalletToken) => {
   console.log('Selected token:', token)
 }
 
-const openSearch = () => {
-  console.log('Opening search...')
-}
-
-const toggleFullscreen = () => {
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen().catch(err => {
-      console.log('Error attempting to enable fullscreen:', err)
-    })
-  } else {
-    document.exitFullscreen().catch(err => {
-      console.log('Error attempting to exit fullscreen:', err)
-    })
-  }
-}
+// 头部相关方法已移至 TopHeader 组件中
 
 const handleManualRefresh = async () => {
   if (!currentWallet.value || isManualRefreshing.value) return
@@ -329,6 +285,9 @@ onMounted(async () => {
       await walletStore.loadWalletBalance(walletStore.currentWallet.id)
       console.log('💰 Balance loaded:', walletStore.totalBalance)
     }
+
+    // 移除了窗口模式检查，因为现在只有关闭功能
+
   } catch (error) {
     console.error('❌ Failed to load wallet data:', error)
   } finally {
@@ -339,51 +298,18 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* Side Panel 专用样式 */
-.sidepanel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  height: 100%;
-}
+/* 头部样式已移至 TopHeader 组件中 */
 
-.header-left {
-  flex: 1;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.header-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: none;
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.header-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.sidepanel-content {
-  padding: 0;
+.home-content {
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
+  height: 100%;
+  overflow-y: auto;
 }
 
-/* 余额卡片 */
+/* 余额卡片 - 统一样式 */
 .balance-card {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 16px;
@@ -670,35 +596,5 @@ onMounted(async () => {
   animation: spin 1s linear infinite;
 }
 
-/* 底部导航 */
-.bottom-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 12px 8px;
-  color: rgba(255, 255, 255, 0.6);
-  text-decoration: none;
-  transition: all 0.2s ease;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.nav-item:hover,
-.nav-item.active {
-  color: white;
-}
-
-.nav-item i {
-  font-size: 20px;
-}
+/* 底部导航样式已移至 BottomNavigation 组件 */
 </style>

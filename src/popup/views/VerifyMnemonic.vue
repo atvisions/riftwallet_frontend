@@ -1,59 +1,57 @@
 <template>
-  <ResponsiveLayout
+  <PageContainer
     title="Verify Seed Phrase"
     :show-header="true"
-    :show-footer="false"
+    :show-footer="true"
     :show-back-button="true"
-    :scrollable="true"
-    padding="0"
-    @back="goBack"
+    :custom-back-action="goBack"
+    max-width="480px"
+    padding="20px"
+    :centered="true"
   >
-    <div class="verify-mnemonic-container">
-      <div class="content-area">
-        <div class="description">
-          <h2>Your Seed Phrase</h2>
-          <p>Write down these 12 words in order and keep them safe.</p>
-        </div>
+    <div class="mnemonic-container">
+      <div class="header-section">
+        <h2>Your Recovery Phrase</h2>
+        <p>Write down these 12 words in order and keep them safe.</p>
+      </div>
 
-        <div class="mnemonic-display">
-          <div class="word-grid">
-            <div
-              v-for="(word, index) in mnemonicWords"
-              :key="index"
-              class="word-display-container"
-            >
-              <label>{{ index + 1 }}</label>
-              <div class="word-display">
-                {{ word }}
-              </div>
-            </div>
-          </div>
-
-          <div class="mnemonic-actions">
-            <button class="copy-btn" @click="copyMnemonic">
-              <i class="ri-clipboard-line"></i>
-              Copy to Clipboard
-            </button>
-          </div>
-        </div>
-
-        <div class="error-message" v-if="error">
-          <i class="ri-error-warning-line"></i>
-          {{ error }}
-        </div>
-
-        <div class="security-tips">
-          <div class="tips-content">
-            <i class="ri-shield-check-line"></i>
-            <div>
-              <h3>Security Notice</h3>
-              <p>Never share your seed phrase. Store it safely offline.</p>
-            </div>
+      <div class="mnemonic-display">
+        <div class="word-grid">
+          <div
+            v-for="(word, index) in mnemonicWords"
+            :key="index"
+            class="word-item"
+          >
+            <span class="word-number">{{ index + 1 }}</span>
+            <span class="word-text">{{ word }}</span>
           </div>
         </div>
       </div>
 
-      <!-- Fixed Bottom Button -->
+      <div class="action-section">
+        <button class="copy-btn" @click="copyMnemonic">
+          <i class="ri-clipboard-line"></i>
+          <span>Copy to Clipboard</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="error-message" v-if="error">
+      <i class="ri-error-warning-line"></i>
+      {{ error }}
+    </div>
+
+    <div class="security-tips">
+      <div class="tips-content">
+        <i class="ri-shield-check-line"></i>
+        <div>
+          <h3>Security Notice</h3>
+          <p>Never share your seed phrase. Store it safely offline.</p>
+        </div>
+      </div>
+    </div>
+
+    <template #footer>
       <div class="bottom-section">
         <button
           class="verify-btn"
@@ -70,8 +68,8 @@
           </span>
         </button>
       </div>
-    </div>
-  </ResponsiveLayout>
+    </template>
+  </PageContainer>
 </template>
 
 <script setup lang="ts">
@@ -80,7 +78,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@shared/stores/auth'
 import { useWalletStore } from '@shared/stores/wallet'
 import { APP_CONFIG } from '@shared/constants'
-import ResponsiveLayout from '@/popup/components/ResponsiveLayout.vue'
+import PageContainer from '@/popup/components/PageContainer.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -106,11 +104,28 @@ const goBack = () => {
 const copyMnemonic = async () => {
   try {
     const mnemonic = mnemonicWords.value.join(' ')
+
+    if (!navigator.clipboard) {
+      error.value = 'Clipboard API not supported'
+      return
+    }
+
     await navigator.clipboard.writeText(mnemonic)
     // 可以添加一个临时的成功提示
     console.log('Mnemonic copied to clipboard')
-  } catch (err) {
-    error.value = 'Failed to copy to clipboard'
+
+    // 临时显示成功消息
+    const originalError = error.value
+    error.value = ''
+    // 这里可以添加成功提示的UI，暂时用console.log
+
+  } catch (err: any) {
+    console.error('Copy error:', err)
+    if (err.name === 'NotAllowedError') {
+      error.value = 'Clipboard access denied. Please allow clipboard permissions.'
+    } else {
+      error.value = 'Failed to copy to clipboard'
+    }
   }
 }
 
@@ -142,104 +157,104 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.verify-mnemonic-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  max-width: 400px;
-  margin: 0 auto;
-  padding: 24px;
-  min-height: calc(100vh - 120px);
-}
-
-.content-area {
-  flex: 1;
+.mnemonic-container {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  overflow-y: auto;
-  margin-bottom: 24px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
+  max-width: 100%;
+  margin: 0 auto;
 }
 
-.description {
+.header-section {
   text-align: center;
+  margin-bottom: 8px;
 
   h2 {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 600;
-    margin: 0 0 6px 0;
+    margin: 0 0 8px 0;
+    color: #f1f5f9;
   }
 
   p {
     color: #94a3b8;
     margin: 0;
     font-size: 14px;
-    line-height: 1.4;
+    line-height: 1.5;
   }
 }
 
 .mnemonic-display {
-  flex: 1;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px;
   margin-bottom: 16px;
 
   .word-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-    margin-bottom: 12px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    min-width: 0; // 确保网格可以收缩
   }
 
-  .word-display-container {
+  .word-item {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 10px 6px;
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: 4px;
+    transition: all 0.2s ease;
+    min-width: 0; // 确保可以收缩
 
-    label {
-      font-size: 12px;
-      color: #94a3b8;
-      font-weight: 500;
+    &:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(99, 102, 241, 0.3);
     }
 
-    .word-display {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 6px;
-      padding: 8px;
+    .word-number {
+      font-size: 10px;
+      color: #64748b;
+      font-weight: 600;
+    }
+
+    .word-text {
       color: #f1f5f9;
       font-size: 13px;
       font-weight: 500;
       text-align: center;
-      min-height: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      word-break: break-all;
     }
   }
+}
 
-  .mnemonic-actions {
+.action-section {
+  .copy-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border: none;
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
     display: flex;
+    align-items: center;
     justify-content: center;
+    gap: 8px;
+    transition: all 0.3s ease;
 
-    .copy-btn {
-      background: rgba(99, 102, 241, 0.1);
-      border: 1px solid rgba(99, 102, 241, 0.3);
-      border-radius: 8px;
-      padding: 10px 16px;
-      color: #6366f1;
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    i {
       font-size: 14px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.3s ease;
-
-      &:hover {
-        background: rgba(99, 102, 241, 0.15);
-        border-color: #6366f1;
-      }
     }
   }
 }
@@ -296,9 +311,7 @@ onMounted(() => {
 }
 
 .bottom-section {
-  flex-shrink: 0;
-  padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 20px;
 }
 
 .verify-btn {
@@ -354,24 +367,48 @@ onMounted(() => {
 }
 
 // 响应式设计
+// 响应式设计
 @media (max-width: 480px) {
-  .verify-mnemonic-container {
-    padding: 20px;
-    min-height: calc(100vh - 100px);
-  }
-
-  .content-area {
+  .mnemonic-container {
     gap: 20px;
-    margin-bottom: 20px;
   }
 
-  .bottom-section {
-    padding-top: 12px;
+  .header-section {
+    h2 {
+      font-size: 18px;
+    }
+
+    p {
+      font-size: 13px;
+    }
   }
 
-  .verify-btn {
-    padding: 14px 20px;
-    font-size: 15px;
+  .mnemonic-display {
+    padding: 12px;
+
+    .word-grid {
+      grid-template-columns: repeat(3, 1fr) !important;
+      gap: 6px;
+    }
+
+    .word-item {
+      padding: 8px 4px;
+
+      .word-number {
+        font-size: 9px;
+      }
+
+      .word-text {
+        font-size: 11px;
+      }
+    }
+  }
+
+  .action-section {
+    .copy-btn {
+      padding: 10px 12px;
+      font-size: 13px;
+    }
   }
 }
 

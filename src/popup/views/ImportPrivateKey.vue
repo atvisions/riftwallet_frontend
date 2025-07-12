@@ -1,13 +1,14 @@
 <template>
-  <div class="import-private-key-page">
-    <div class="header">
-      <button @click="$router.go(-1)" class="back-btn">
-        <i class="ri-arrow-left-line"></i>
-      </button>
-      <h1>Import Private Key</h1>
-    </div>
-    
-    <div class="content">
+  <PageContainer
+    title="Import Private Key"
+    :show-header="true"
+    :show-footer="true"
+    :show-back-button="true"
+    :custom-back-action="() => $router.go(-1)"
+    max-width="420px"
+    padding="24px"
+    :centered="true"
+  >
       <div class="form-container">
         <!-- Chain Selection -->
         <div class="form-group">
@@ -104,14 +105,14 @@
           <span>{{ error }}</span>
         </div>
       </div>
-    </div>
-  </div>
+  </PageContainer>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useWalletStore } from '@shared/stores/wallet'
+import PageContainer from '@/popup/components/PageContainer.vue'
 
 const router = useRouter()
 const walletStore = useWalletStore()

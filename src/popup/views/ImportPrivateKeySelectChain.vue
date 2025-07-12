@@ -1,14 +1,14 @@
 <template>
-  <div class="select-chain-page">
-    <div class="header">
-      <button @click="goBack" class="back-btn">
-        <i class="ri-arrow-left-line"></i>
-      </button>
-      <h1>Select Blockchain</h1>
-      <div class="placeholder"></div>
-    </div>
-
-    <div class="content">
+  <PageContainer
+    title="Select Blockchain"
+    :show-header="true"
+    :show-footer="true"
+    :show-back-button="true"
+    :custom-back-action="goBack"
+    max-width="420px"
+    padding="24px"
+    :centered="true"
+  >
       <div class="description">
         <p>{{ descriptionText }}</p>
       </div>
@@ -54,24 +54,24 @@
         </div>
       </div>
       
-      <div v-if="error" class="error-message">
-        <i class="ri-error-warning-line"></i>
-        <span>{{ error }}</span>
-      </div>
+    <div v-if="error" class="error-message">
+      <i class="ri-error-warning-line"></i>
+      <span>{{ error }}</span>
     </div>
 
-    <!-- 固定在底部的按钮 -->
-    <div class="bottom-actions">
-      <button
-        class="continue-btn"
-        :disabled="!selectedChain || submitting"
-        @click="continueToPrivateKey"
-      >
-        <i v-if="submitting" class="ri-loader-4-line spinning"></i>
-        <span>{{ submitting ? 'Processing...' : 'Continue' }}</span>
-      </button>
-    </div>
-  </div>
+    <template #footer>
+      <div class="bottom-actions">
+        <button
+          class="continue-btn"
+          :disabled="!selectedChain || submitting"
+          @click="continueToPrivateKey"
+        >
+          <i v-if="submitting" class="ri-loader-4-line spinning"></i>
+          <span>{{ submitting ? 'Processing...' : 'Continue' }}</span>
+        </button>
+      </div>
+    </template>
+  </PageContainer>
 </template>
 
 <script setup lang="ts">
@@ -79,6 +79,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@shared/stores/auth'
 import { APP_CONFIG } from '@shared/constants'
+import PageContainer from '@/popup/components/PageContainer.vue'
 
 interface SupportedChain {
   chain: string

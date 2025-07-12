@@ -1,23 +1,24 @@
 <template>
-  <div class="history-page">
-    <div class="header">
-      <button @click="$router.go(-1)" class="back-btn">
-        <i class="ri-arrow-left-line"></i>
-      </button>
-      <h1>Transaction History</h1>
+  <PageContainer
+    title="Transaction History"
+    :show-header="true"
+    :show-footer="false"
+    :show-back-button="true"
+    :custom-back-action="() => $router.go(-1)"
+    max-width="420px"
+    padding="0"
+    :centered="true"
+  >
+    <div class="coming-soon">
+      <i class="ri-history-line"></i>
+      <h2>Transaction History</h2>
+      <p>Coming Soon</p>
     </div>
-    
-    <div class="content">
-      <div class="coming-soon">
-        <i class="ri-history-line"></i>
-        <h2>Transaction History</h2>
-        <p>Coming Soon</p>
-      </div>
-    </div>
-  </div>
+  </PageContainer>
 </template>
 
 <script setup lang="ts">
+import PageContainer from '@/popup/components/PageContainer.vue'
 // History functionality will be implemented later
 </script>
 

@@ -56,7 +56,7 @@ const props = withDefaults(defineProps<Props>(), {
   showBackButton: false,
   mode: 'auto',
   maxHeight: '600px',
-  padding: '16px',
+  padding: '0',
   scrollable: true
 })
 
@@ -88,11 +88,21 @@ const detectMode = () => {
 }
 
 // 布局类名
-const layoutClasses = computed(() => ({
-  'layout-popup': currentMode.value === 'popup',
-  'layout-sidepanel': currentMode.value === 'sidepanel',
-  'layout-scrollable': props.scrollable
-}))
+const layoutClasses = computed(() => {
+  const classes = {
+    'layout-popup': currentMode.value === 'popup',
+    'layout-sidepanel': currentMode.value === 'sidepanel',
+    'layout-scrollable': props.scrollable
+  }
+  console.log('🎯 ResponsiveLayout - layoutClasses:', {
+    currentMode: currentMode.value,
+    propsMode: props.mode,
+    classes,
+    windowWidth: window.innerWidth,
+    windowHeight: window.innerHeight
+  })
+  return classes
+})
 
 const mainClasses = computed(() => ({
   'main-with-header': props.showHeader,
@@ -104,6 +114,14 @@ const contentClasses = computed(() => ({
 }))
 
 onMounted(() => {
+  console.log('🎯 ResponsiveLayout mounted with props:', {
+    mode: props.mode,
+    showHeader: props.showHeader,
+    showFooter: props.showFooter,
+    title: props.title,
+    windowSize: { width: window.innerWidth, height: window.innerHeight },
+    location: { href: window.location.href, pathname: window.location.pathname }
+  })
   detectMode()
   window.addEventListener('resize', detectMode)
 })
@@ -224,7 +242,7 @@ onUnmounted(() => {
 }
 
 .layout-sidepanel .main-with-header.main-with-footer {
-  height: calc(100vh - 128px);
+  height: calc(100vh - 124px);
 }
 
 .main-content {
@@ -234,6 +252,7 @@ onUnmounted(() => {
   width: 100%;
   max-width: 400px;
   margin: 0 auto;
+  height: 100%;
 }
 
 .layout-popup .main-content {
@@ -241,16 +260,22 @@ onUnmounted(() => {
   margin: 0;
 }
 
+.layout-sidepanel .main-content {
+  max-width: none;
+  margin: 0;
+  height: 100%;
+}
+
 .layout-scrollable .main-content {
   overflow-y: auto;
 }
 
 .content-padded {
-  padding: 16px;
+  padding: 0;
 }
 
 .layout-sidepanel .content-padded {
-  padding: 24px;
+  padding: 0;
 }
 
 /* 底部样式 */
@@ -259,11 +284,16 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 12px 16px;
+  padding: 0;
 }
 
 .layout-sidepanel .layout-footer {
-  padding: 16px 24px;
+  padding: 0;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
 }
 
 /* 滚动条样式 */

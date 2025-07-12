@@ -2,19 +2,18 @@
 
 // 根据环境选择 API 基础 URL
 const getApiBaseUrl = () => {
-  // 检查是否在插件环境中
-  if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id) {
-    // 插件环境，连接本地服务器
-    return 'http://localhost:8000/api/v1'
+  try {
+    // 检查是否在本地开发环境
+    if (typeof window !== 'undefined' && window.location && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+      return '/api/v1'
+    }
+  } catch (error) {
+    // 在某些环境下（如 background script）window 可能不可用
+    console.warn('Window object not available, using default API URL')
   }
 
-  // 检查是否在本地开发环境
-  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-    return '/api/v1'
-  }
-
-  // 默认使用本地服务器
-  return 'http://localhost:8000/api/v1'
+  // 使用生产服务器
+  return 'https://www.riftwallet.io/api/v1'
 }
 
 export const APP_CONFIG = {

@@ -1,34 +1,35 @@
 <template>
-  <div class="wallet-detail">
-    <div class="header">
-      <button @click="$router.go(-1)" class="back-btn">
-        <i class="ri-arrow-left-line"></i>
-      </button>
-      <h1>Wallet Details</h1>
-    </div>
-    
-    <div class="content">
-      <div v-if="wallet" class="wallet-info">
-        <div class="wallet-avatar">
-          <img :src="wallet.avatar || defaultAvatar" :alt="wallet.name">
-        </div>
-        <h2>{{ wallet.name }}</h2>
-        <p class="wallet-address">{{ formatAddress(wallet.address) }}</p>
-        <p class="wallet-chain">{{ getChainName(wallet.chain) }}</p>
+  <PageContainer
+    title="Wallet Details"
+    :show-header="true"
+    :show-footer="false"
+    :show-back-button="true"
+    :custom-back-action="() => $router.go(-1)"
+    max-width="420px"
+    padding="24px"
+    :centered="true"
+  >
+    <div v-if="wallet" class="wallet-info">
+      <div class="wallet-avatar">
+        <img :src="wallet.avatar || defaultAvatar" :alt="wallet.name">
       </div>
-      
-      <div v-else class="loading">
-        <div class="loading-spinner"></div>
-        <p>Loading wallet details...</p>
-      </div>
+      <h2>{{ wallet.name }}</h2>
+      <p class="wallet-address">{{ formatAddress(wallet.address) }}</p>
+      <p class="wallet-chain">{{ getChainName(wallet.chain) }}</p>
     </div>
-  </div>
+
+    <div v-else class="loading">
+      <div class="loading-spinner"></div>
+      <p>Loading wallet details...</p>
+    </div>
+  </PageContainer>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useWalletStore } from '@shared/stores/wallet'
+import PageContainer from '@/popup/components/PageContainer.vue'
 import { CHAIN_CONFIG } from '@shared/constants'
 import { formatAddress } from '@shared/utils'
 

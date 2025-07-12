@@ -16,11 +16,13 @@
           </div>
         </div>
         <div class="wallet-details">
-          <span class="wallet-name">{{ currentWallet?.name || 'No Wallet' }}</span>
+          <div class="wallet-name-row">
+            <span class="wallet-name">{{ currentWallet?.name || 'No Wallet' }}</span>
+            <i class="ri-arrow-down-s-line dropdown-icon" :class="{ 'rotated': showDropdown }"></i>
+          </div>
           <span class="wallet-chain">{{ currentWallet ? getChainName(currentWallet.chain) : '' }}</span>
         </div>
       </div>
-      <i class="ri-arrow-down-s-line dropdown-icon" :class="{ 'rotated': showDropdown }"></i>
     </div>
 
     <!-- 下拉菜单 -->
@@ -270,6 +272,12 @@ onUnmounted(() => {
       display: flex;
       flex-direction: column;
       gap: 2px;
+
+      .wallet-name-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
 
       .wallet-name {
         font-size: 14px;

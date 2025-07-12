@@ -7,14 +7,21 @@ export default defineConfig({
   plugins: [
     vue(),
     {
-      name: 'copy-manifest',
+      name: 'copy-files',
       buildStart() {
         // 确保输出目录存在
         if (!existsSync('dist')) {
           mkdirSync('dist', { recursive: true })
         }
+        if (!existsSync('dist/src/sidepanel')) {
+          mkdirSync('dist/src/sidepanel', { recursive: true })
+        }
+
         // 复制 manifest.json
         copyFileSync('public/manifest.json', 'dist/manifest.json')
+
+        // 复制关闭页面
+        copyFileSync('src/sidepanel/closed.html', 'dist/src/sidepanel/closed.html')
       }
     }
   ],

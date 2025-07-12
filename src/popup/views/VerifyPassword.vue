@@ -120,16 +120,18 @@ const handleVerifyPassword = async () => {
   background: #0F172A;
   color: #f1f5f9;
   overflow-y: auto;
-  padding: 80px 24px 24px;
+  padding: 40px 24px 24px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: center;
+  align-items: center;
 }
 
 // Header Section
 .header-section {
   text-align: center;
-  margin-bottom: 60px;
+  margin-bottom: 40px;
+  width: 100%;
 
   .logo-container {
     margin-bottom: 20px;
@@ -161,6 +163,8 @@ const handleVerifyPassword = async () => {
 
 // Form Section
 .form-section {
+  width: 100%;
+  max-width: 320px;
   .form-header {
     text-align: center;
     margin-bottom: 32px;

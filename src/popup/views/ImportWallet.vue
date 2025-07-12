@@ -1,25 +1,25 @@
 <template>
-  <ResponsiveLayout
+  <PageContainer
     title="Import Wallet"
     :show-header="true"
     :show-footer="false"
     :show-back-button="true"
-    :scrollable="true"
-    padding="0"
-    @back="$router.go(-1)"
+    :custom-back-action="() => $router.go(-1)"
+    max-width="420px"
+    padding="24px"
+    :centered="true"
   >
-    <div class="import-wallet-container">
-      <!-- 头部说明 -->
-      <div class="import-header">
-        <div class="import-icon">
-          <i class="ri-download-cloud-line"></i>
-        </div>
-        <h2>Import Your Wallet</h2>
-        <p>Choose your preferred import method to restore your existing wallet</p>
+    <!-- 头部说明 -->
+    <div class="import-header">
+      <div class="import-icon">
+        <i class="ri-download-cloud-line"></i>
       </div>
+      <h2>Import Your Wallet</h2>
+      <p>Choose your preferred import method to restore your existing wallet</p>
+    </div>
 
-      <!-- 导入选项 -->
-      <div class="import-options">
+    <!-- 导入选项 -->
+    <div class="import-options">
         <!-- Import Recovery Phrase -->
         <div class="option-card mnemonic-card" @click="importMnemonic">
           <div class="card-background"></div>
@@ -67,23 +67,22 @@
         </div>
       </div>
 
-      <!-- 安全提示 -->
-      <div class="security-warning">
-        <div class="warning-icon">
-          <i class="ri-shield-check-line"></i>
-        </div>
-        <div class="warning-content">
-          <h4>Security Reminder</h4>
-          <p>Never share your recovery phrase or private key with anyone. Riftwallet will never ask for this information.</p>
-        </div>
+    <!-- 安全提示 -->
+    <div class="security-warning">
+      <div class="warning-icon">
+        <i class="ri-shield-check-line"></i>
+      </div>
+      <div class="warning-content">
+        <h4>Security Reminder</h4>
+        <p>Never share your recovery phrase or private key with anyone. Riftwallet will never ask for this information.</p>
       </div>
     </div>
-  </ResponsiveLayout>
+  </PageContainer>
 </template>
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import ResponsiveLayout from '../components/ResponsiveLayout.vue'
+import PageContainer from '../components/PageContainer.vue'
 
 const router = useRouter()
 

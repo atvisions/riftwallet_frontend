@@ -1,72 +1,91 @@
 <template>
-  <ResponsiveLayout
+  <PageContainer
     title="Confirm Seed Phrase"
     :show-header="true"
-    :show-footer="false"
+    :show-footer="true"
     :show-back-button="true"
-    :scrollable="true"
-    padding="0"
-    @back="goBack"
+    :custom-back-action="goBack"
+    max-width="480px"
+    padding="20px"
+    :centered="true"
   >
-    <div class="confirm-mnemonic-container">
-      <div class="content-area">
-        <div class="description">
-          <h2>Verify Your Seed Phrase</h2>
-          <p>Please enter your 12-word seed phrase to confirm you've saved it correctly.</p>
-        </div>
-
-        <div class="mnemonic-input">
-          <div class="word-grid">
-            <div
-              v-for="(word, index) in inputWords"
-              :key="index"
-              class="word-input-container"
-            >
-              <label>{{ index + 1 }}</label>
-              <input
-                v-model="inputWords[index]"
-                type="text"
-                :placeholder="`Word ${index + 1}`"
-                class="word-input"
-                @input="validateInput"
-                autocomplete="off"
-                spellcheck="false"
-              />
-            </div>
-          </div>
-
-          <div class="input-actions">
-            <button class="paste-btn" @click="pasteMnemonic" :disabled="pasting">
-              <i v-if="pasting" class="ri-loader-4-line animate-spin"></i>
-              <i v-else class="ri-clipboard-line"></i>
-              {{ pasting ? 'Pasting...' : 'Paste from Clipboard' }}
-            </button>
-            <button class="clear-btn" @click="clearInput">
-              <i class="ri-delete-bin-line"></i>
-              Clear All
-            </button>
-          </div>
-        </div>
-      
-        <div class="error-message" v-if="error">
-          <i class="ri-error-warning-line"></i>
-          {{ error }}
-        </div>
+    <div class="confirm-container">
+      <div class="header-section">
+        <h2>Verify Recovery Phrase</h2>
+        <p>Enter your 12-word recovery phrase to confirm you've saved it correctly.</p>
       </div>
 
-      <!-- Fixed Bottom Button -->
+      <div class="input-section">
+        <div class="word-grid">
+          <div
+            v-for="(word, index) in inputWords"
+            :key="index"
+            class="word-input-item"
+          >
+            <span class="word-number">{{ index + 1 }}</span>
+            <input
+              v-model="inputWords[index]"
+              type="text"
+              :placeholder="`Word ${index + 1}`"
+              class="word-input"
+              @input="validateInput"
+              autocomplete="off"
+              spellcheck="false"
+            />
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button class="paste-btn" @click="pasteMnemonic" :disabled="pasting">
+            <i v-if="pasting" class="ri-loader-4-line animate-spin"></i>
+            <i v-else class="ri-clipboard-line"></i>
+            <span>{{ pasting ? 'Pasting...' : 'Paste from Clipboard' }}</span>
+          </button>
+          <button class="clear-btn" @click="clearInput">
+            <i class="ri-delete-bin-line"></i>
+            <span>Clear All</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="password-section">
+      <h3>Verify Your Password</h3>
+      <p>Enter your wallet password to create the wallet</p>
+
+      <div class="password-inputs">
+        <div class="input-group">
+          <label>Password</label>
+          <input
+            v-model="password"
+            type="password"
+            placeholder="Enter your wallet password"
+            class="password-input"
+            @input="validatePassword"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="error-message" v-if="error">
+      <i class="ri-error-warning-line"></i>
+      {{ error }}
+    </div>
+
+    <template #footer>
       <div class="bottom-section">
         <button
           class="confirm-btn"
-          :disabled="!isValidInput"
+          :disabled="!isValidInput || !isValidPassword || submitting"
           @click="confirmMnemonic"
         >
-          <span>Continue</span>
-          <i class="ri-arrow-right-line"></i>
+          <i v-if="submitting" class="ri-loader-4-line animate-spin"></i>
+          <i v-else class="ri-add-line"></i>
+          <span>{{ submitting ? 'Creating Wallet...' : 'Create Wallet' }}</span>
         </button>
       </div>
-    </div>
-  </ResponsiveLayout>
+    </template>
+  </PageContainer>
 </template>
 
 <script setup lang="ts">
@@ -75,7 +94,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@shared/stores/auth'
 import { useWalletStore } from '@shared/stores/wallet'
 import { APP_CONFIG } from '@shared/constants'
-import ResponsiveLayout from '@/popup/components/ResponsiveLayout.vue'
+import PageContainer from '@/popup/components/PageContainer.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -83,6 +102,7 @@ const walletStore = useWalletStore()
 
 // 响应式数据
 const inputWords = ref<string[]>(Array(12).fill(''))
+const password = ref('')
 const submitting = ref(false)
 const pasting = ref(false)
 const error = ref('')
@@ -96,6 +116,10 @@ const isValidInput = computed(() => {
   return inputWords.value.every(word => word.trim().length > 0)
 })
 
+const isValidPassword = computed(() => {
+  return password.value.length >= 6
+})
+
 
 
 // 返回上一页
@@ -106,6 +130,15 @@ const goBack = () => {
 // 验证输入
 const validateInput = () => {
   error.value = ''
+}
+
+// 验证密码
+const validatePassword = () => {
+  error.value = ''
+  if (password.value.length > 0 && password.value.length < 6) {
+    error.value = 'Password must be at least 6 characters'
+    return
+  }
 }
 
 
@@ -121,39 +154,33 @@ const pasteMnemonic = async () => {
 
     // 检查剪贴板 API 是否可用
     if (!navigator.clipboard) {
-      // 备用方案：使用传统的 execCommand (已废弃但仍可用)
-      try {
-        const textArea = document.createElement('textarea')
-        textArea.style.position = 'fixed'
-        textArea.style.left = '-999999px'
-        textArea.style.top = '-999999px'
-        document.body.appendChild(textArea)
-        textArea.focus()
-        document.execCommand('paste')
-        const text = textArea.value
-        document.body.removeChild(textArea)
-
-        if (text) {
-          processPastedText(text)
-        } else {
-          error.value = 'No text found in clipboard. Please copy your seed phrase first.'
-        }
-      } catch (fallbackErr) {
-        error.value = 'Clipboard access not available. Please type your seed phrase manually.'
-      }
+      error.value = 'Clipboard API not supported. Please type your seed phrase manually.'
       return
+    }
+
+    // 首先检查权限
+    try {
+      const permission = await navigator.permissions.query({ name: 'clipboard-read' as PermissionName })
+      if (permission.state === 'denied') {
+        error.value = 'Clipboard access denied. Please allow clipboard permissions in your browser settings or type manually.'
+        return
+      }
+    } catch (permErr) {
+      console.log('Permission check not supported, proceeding with clipboard read')
     }
 
     // 使用现代剪贴板 API
     const text = await navigator.clipboard.readText()
     processPastedText(text)
 
-  } catch (err) {
+  } catch (err: any) {
     console.error('Clipboard error:', err)
     if (err.name === 'NotAllowedError') {
       error.value = 'Clipboard access denied. Please allow clipboard permissions or type manually.'
     } else if (err.name === 'NotFoundError') {
       error.value = 'No text found in clipboard. Please copy your seed phrase first.'
+    } else if (err.name === 'SecurityError') {
+      error.value = 'Clipboard access blocked by security policy. Please type your seed phrase manually.'
     } else {
       error.value = 'Failed to read from clipboard. Please type your seed phrase manually.'
     }
@@ -196,12 +223,13 @@ const clearInput = () => {
   error.value = ''
 }
 
-// 确认助记词
-const confirmMnemonic = () => {
-  if (!isValidInput.value) return
+// 确认助记词并创建钱包
+const confirmMnemonic = async () => {
+  if (!isValidInput.value || !isValidPassword.value) return
 
   try {
     error.value = ''
+    submitting.value = true
 
     const inputMnemonic = inputWords.value.join(' ').toLowerCase()
     const originalMnemonicLower = originalMnemonic.value.toLowerCase()
@@ -212,13 +240,68 @@ const confirmMnemonic = () => {
       return
     }
 
-    // 助记词验证通过，保存到 sessionStorage 并跳转到密码页面
-    sessionStorage.setItem('verified_mnemonic', inputMnemonic)
+    // 调用验证助记词API
+    const response = await fetch(`${APP_CONFIG.API_BASE_URL}/wallets/verify_mnemonic/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        device_id: authStore.deviceId,
+        chain: selectedChain.value,
+        mnemonic: inputMnemonic,
+        payment_password: password.value
+      })
+    })
 
-    // 跳转到密码输入页面
-    router.push('/create-wallet-password')
+    const data = await response.json()
+
+    if (!response.ok || data.state !== 'success') {
+      throw new Error(data.message || 'Failed to verify mnemonic')
+    }
+
+    // 验证成功，重新加载钱包列表
+    if (data.data && data.data.success) {
+      console.log('✅ Wallet verification successful, reloading wallets...')
+      await walletStore.loadWallets()
+      console.log('📋 Wallets loaded:', walletStore.wallets.length)
+
+      // 确保设置当前钱包（选择最新创建的钱包）
+      if (walletStore.wallets.length > 0) {
+        // 如果API返回了钱包信息，尝试找到对应的钱包
+        if (data.data.wallet && data.data.wallet.id) {
+          console.log('🔍 Looking for wallet with ID:', data.data.wallet.id)
+          const newWallet = walletStore.wallets.find(w => w.id === data.data.wallet.id)
+          if (newWallet) {
+            console.log('✅ Found new wallet, setting as current:', newWallet.name)
+            await walletStore.setCurrentWallet(newWallet)
+          } else {
+            console.log('❌ New wallet not found, selecting first wallet')
+            await walletStore.setCurrentWallet(walletStore.wallets[0])
+          }
+        } else {
+          console.log('📝 No wallet ID in response, selecting first wallet')
+          await walletStore.setCurrentWallet(walletStore.wallets[0])
+        }
+        console.log('🎯 Current wallet set:', walletStore.currentWallet?.name)
+      } else {
+        console.log('❌ No wallets found after reload')
+      }
+    }
+
+    // 清除临时数据
+    sessionStorage.removeItem('generated_mnemonic')
+    sessionStorage.removeItem('selected_chain')
+    console.log('🧹 Temporary data cleared')
+
+    // 跳转到首页
+    console.log('🚀 Navigating to home page...')
+    router.push('/')
+    console.log('✅ Navigation initiated')
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Verification failed'
+  } finally {
+    submitting.value = false
   }
 }
 
@@ -242,106 +325,114 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.confirm-mnemonic-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  max-width: 400px;
-  margin: 0 auto;
-  padding: 24px;
-  min-height: calc(100vh - 120px);
-}
-
-.content-area {
-  flex: 1;
+.confirm-container {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  overflow-y: auto;
-  margin-bottom: 24px;
+  max-width: 100%;
+  margin: 0 auto;
 }
 
-.description {
+.header-section {
   text-align: center;
-  
+  margin-bottom: 8px;
+
   h2 {
     font-size: 20px;
     font-weight: 600;
     margin: 0 0 8px 0;
+    color: #f1f5f9;
   }
-  
+
   p {
     color: #94a3b8;
     margin: 0;
+    font-size: 14px;
     line-height: 1.5;
   }
 }
 
-.mnemonic-input {
-  margin-bottom: 24px;
-  
+.input-section {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+
   .word-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
     margin-bottom: 16px;
+    min-width: 0; // 确保网格可以收缩
   }
-  
-  .word-input-container {
+
+  .word-input-item {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    
-    label {
-      font-size: 12px;
-      color: #94a3b8;
-      font-weight: 500;
+    min-width: 0; // 确保可以收缩
+
+    .word-number {
+      font-size: 10px;
+      color: #64748b;
+      font-weight: 600;
+      text-align: center;
     }
-    
+
     .word-input {
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 8px;
-      padding: 12px;
+      padding: 14px 6px; // 增加高度以匹配显示框
       color: #f1f5f9;
-      font-size: 14px;
+      font-size: 13px;
+      font-weight: 500;
+      text-align: center;
       transition: all 0.3s ease;
-      
+      min-width: 0; // 确保可以收缩
+      min-height: 44px; // 设置最小高度
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
       &:focus {
         outline: none;
         border-color: #6366f1;
         background: rgba(255, 255, 255, 0.08);
       }
-      
+
       &::placeholder {
         color: #64748b;
+        font-size: 11px;
       }
     }
   }
   
-  .input-actions {
+  .action-buttons {
     display: flex;
-    gap: 8px;
-    
+    gap: 12px;
+
     button {
       flex: 1;
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
-      padding: 10px 12px;
+      border-radius: 12px;
+      padding: 12px 16px;
       color: #94a3b8;
-      font-size: 12px;
+      font-size: 13px;
+      font-weight: 500;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 8px;
       transition: all 0.3s ease;
-      
+
       &:hover:not(:disabled) {
         background: rgba(255, 255, 255, 0.08);
-        border-color: #6366f1;
+        border-color: rgba(99, 102, 241, 0.3);
         color: #f1f5f9;
+        transform: translateY(-1px);
       }
 
       &:disabled {
@@ -351,11 +442,83 @@ onMounted(() => {
         border-color: rgba(255, 255, 255, 0.05);
         color: #64748b;
       }
+
+      i {
+        font-size: 14px;
+      }
+    }
+
+    .paste-btn {
+      &:hover:not(:disabled) {
+        border-color: rgba(16, 185, 129, 0.3);
+        color: #10b981;
+      }
+    }
+
+    .clear-btn {
+      &:hover:not(:disabled) {
+        border-color: rgba(239, 68, 68, 0.3);
+        color: #ef4444;
+      }
     }
   }
 }
 
+.password-section {
+  margin-top: 24px;
 
+  h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 6px 0;
+    color: #f1f5f9;
+  }
+
+  p {
+    color: #94a3b8;
+    margin: 0 0 16px 0;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .password-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 0; // 只有一个输入框，不需要间距
+  }
+
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    label {
+      font-size: 14px;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    .password-input {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: #f1f5f9;
+      font-size: 14px;
+      transition: all 0.3s ease;
+
+      &:focus {
+        outline: none;
+        border-color: #6366f1;
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      &::placeholder {
+        color: #64748b;
+      }
+    }
+  }
+}
 
 .error-message {
   background: rgba(239, 68, 68, 0.1);
@@ -375,9 +538,7 @@ onMounted(() => {
 }
 
 .bottom-section {
-  flex-shrink: 0;
-  padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 20px;
 }
 
 .confirm-btn {
@@ -434,23 +595,82 @@ onMounted(() => {
 
 // 响应式设计
 @media (max-width: 480px) {
-  .confirm-mnemonic-container {
-    padding: 20px;
-    min-height: calc(100vh - 100px);
-  }
-
-  .content-area {
+  .confirm-container {
     gap: 20px;
-    margin-bottom: 20px;
   }
 
-  .bottom-section {
-    padding-top: 12px;
+  .header-section {
+    h2 {
+      font-size: 18px;
+    }
+
+    p {
+      font-size: 13px;
+    }
   }
 
-  .confirm-btn {
-    padding: 14px 20px;
-    font-size: 15px;
+  .input-section {
+    padding: 12px;
+
+    .word-grid {
+      grid-template-columns: repeat(3, 1fr) !important;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .word-input-item {
+      gap: 3px;
+
+      .word-number {
+        font-size: 9px;
+      }
+
+      .word-input {
+        padding: 12px 4px;
+        font-size: 11px;
+        min-height: 36px; // 小屏幕上稍微减少高度但保持一致
+      }
+    }
+
+    .action-buttons {
+      gap: 8px;
+
+      button {
+        padding: 10px 12px;
+        font-size: 12px;
+
+        i {
+          font-size: 12px;
+        }
+      }
+    }
+  }
+
+  .password-section {
+    margin-top: 20px;
+
+    h3 {
+      font-size: 16px;
+    }
+
+    p {
+      font-size: 13px;
+    }
+
+    .password-inputs {
+      gap: 0; // 只有一个输入框
+    }
+
+    .input-group {
+      label {
+        font-size: 13px;
+      }
+
+      .password-input {
+        padding: 10px 12px;
+        font-size: 13px;
+      }
+    }
   }
 }
 

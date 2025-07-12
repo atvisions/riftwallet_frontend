@@ -1,17 +1,17 @@
 <template>
-  <div class="select-chain-page">
-    <div class="header">
-      <button class="back-btn" @click="goBack">
-        <i class="ri-arrow-left-line"></i>
-      </button>
-      <h1>Select Blockchain</h1>
-      <div class="placeholder"></div>
+  <PageContainer
+    title="Select Blockchain"
+    :show-header="true"
+    :show-footer="true"
+    :show-back-button="true"
+    :custom-back-action="goBack"
+    max-width="420px"
+    padding="24px"
+    :centered="true"
+  >
+    <div class="description">
+      <p>Choose the blockchain network for your new wallet</p>
     </div>
-    
-    <div class="content">
-      <div class="description">
-        <p>Choose the blockchain network for your new wallet</p>
-      </div>
       
       <div class="chains-container" v-if="!loading">
         <div
@@ -62,25 +62,26 @@
           Retry
         </button>
       </div>
-    </div>
-    
-    <div class="footer">
-      <button 
-        class="continue-btn" 
-        :disabled="!selectedChain || submitting"
-        @click="continueToMnemonic"
-      >
-        <span v-if="submitting">
-          <i class="ri-loader-4-line animate-spin"></i>
-          Processing...
-        </span>
-        <span v-else>
-          Continue
-          <i class="ri-arrow-right-line"></i>
-        </span>
-      </button>
-    </div>
-  </div>
+
+    <template #footer>
+      <div class="footer">
+        <button
+          class="continue-btn"
+          :disabled="!selectedChain || submitting"
+          @click="continueToMnemonic"
+        >
+          <span v-if="submitting">
+            <i class="ri-loader-4-line animate-spin"></i>
+            Processing...
+          </span>
+          <span v-else>
+            Continue
+            <i class="ri-arrow-right-line"></i>
+          </span>
+        </button>
+      </div>
+    </template>
+  </PageContainer>
 </template>
 
 <script setup lang="ts">
@@ -89,6 +90,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@shared/stores/auth'
 import { useWalletStore } from '@shared/stores/wallet'
 import { APP_CONFIG } from '@shared/constants'
+import PageContainer from '@/popup/components/PageContainer.vue'
 
 interface SupportedChain {
   chain: string

@@ -1,13 +1,14 @@
 <template>
-  <div class="receive-page">
-    <div class="header">
-      <button @click="$router.go(-1)" class="back-btn">
-        <i class="ri-arrow-left-line"></i>
-      </button>
-      <h1>Receive</h1>
-    </div>
-    
-    <div class="content">
+  <PageContainer
+    title="Receive"
+    :show-header="true"
+    :show-footer="false"
+    :show-back-button="true"
+    :custom-back-action="() => $router.go(-1)"
+    max-width="420px"
+    padding="0"
+    :centered="true"
+  >
       <div class="qr-section">
         <div class="qr-code">
           <canvas ref="qrCanvas"></canvas>
@@ -18,14 +19,14 @@
           Copy Address
         </button>
       </div>
-    </div>
-  </div>
+  </PageContainer>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useWalletStore } from '@shared/stores/wallet'
 import { copyToClipboard } from '@shared/utils'
+import PageContainer from '@/popup/components/PageContainer.vue'
 
 const walletStore = useWalletStore()
 const qrCanvas = ref<HTMLCanvasElement>()

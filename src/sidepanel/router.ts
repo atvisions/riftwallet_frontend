@@ -39,17 +39,17 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/markets',
     name: 'Markets',
-    component: () => import('../popup/views/Settings.vue') // 临时使用 Settings，后续可以创建专门的 Markets 页面
+    component: () => import('../popup/views/Markets.vue')
   },
   {
     path: '/trade',
     name: 'Trade',
-    component: () => import('../popup/views/Swap.vue') // 临时使用 Swap，后续可以创建专门的 Trade 页面
+    component: () => import('../popup/views/Trade.vue')
   },
   {
     path: '/discover',
     name: 'Discover',
-    component: () => import('../popup/views/Settings.vue') // 临时使用 Settings，后续可以创建专门的 Discover 页面
+    component: () => import('../popup/views/Discover.vue')
   },
 
   {

@@ -1,14 +1,14 @@
 <template>
-  <ResponsiveLayout
+  <PageContainer
     title="Import Private Key"
     :show-header="true"
-    :show-footer="false"
+    :show-footer="true"
     :show-back-button="true"
-    :scrollable="true"
-    padding="0"
-    @back="goBack"
+    :custom-back-action="goBack"
+    max-width="420px"
+    padding="24px"
+    :centered="true"
   >
-    <div class="import-private-key-container">
       <div class="form-content">
         <!-- Selected Chain Display -->
         <div class="selected-chain" v-if="selectedChain">
@@ -84,13 +84,13 @@
         </div>
       </div>
 
-      <!-- Error Alert -->
-      <div v-if="error" class="error-alert">
-        <i class="ri-error-warning-line"></i>
-        <span>{{ error }}</span>
-      </div>
+    <!-- Error Alert -->
+    <div v-if="error" class="error-alert">
+      <i class="ri-error-warning-line"></i>
+      <span>{{ error }}</span>
+    </div>
 
-      <!-- Fixed Bottom Button -->
+    <template #footer>
       <div class="bottom-section">
         <button
           class="import-btn"
@@ -102,15 +102,15 @@
           {{ loading ? 'Importing...' : 'Import Wallet' }}
         </button>
       </div>
-    </div>
-  </ResponsiveLayout>
+    </template>
+  </PageContainer>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useWalletStore } from '@shared/stores/wallet'
-import ResponsiveLayout from '@/popup/components/ResponsiveLayout.vue'
+import PageContainer from '@/popup/components/PageContainer.vue'
 
 interface SupportedChain {
   chain: string

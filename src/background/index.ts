@@ -18,37 +18,49 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   }
 })
 
-// 处理扩展图标点击事件
+// 处理扩展图标点击事件（Phantom 风格：总是打开弹窗）
 chrome.action.onClicked.addListener(async (tab) => {
-  console.log('Background: Extension icon clicked, tab:', tab)
+  console.log('Background: Extension icon clicked, opening popup (Phantom-style)')
 
   try {
-    // 检查是否支持 Side Panel API
-    if (chrome.sidePanel && tab.windowId) {
-      console.log('Background: Opening side panel for window:', tab.windowId)
-      // 打开侧边栏
-      await chrome.sidePanel.open({ windowId: tab.windowId })
-      console.log('Background: Side panel opened successfully')
-    } else {
-      console.log('Background: Side Panel API not supported or no window ID, using popup fallback')
-      // 降级：打开弹窗页面作为新标签页
+    const windowId = tab.windowId
+    if (!windowId) {
+      throw new Error('No window ID available')
+    }
+
+    // Phantom 风格：扩展图标总是打开弹窗，不是侧边栏
+    console.log('Background: Opening popup window')
+
+    // 方法1: 尝试使用 chrome.action.openPopup()
+    try {
+      await chrome.action.openPopup()
+      console.log('Background: Popup opened via chrome.action.openPopup()')
+    } catch (popupError) {
+      console.log('Background: chrome.action.openPopup() failed, using tab fallback:', popupError)
+
+      // 方法2: 降级到新标签页
       await chrome.tabs.create({
         url: chrome.runtime.getURL('src/popup/index.html'),
-        windowId: tab.windowId
+        windowId
       })
+      console.log('Background: Popup opened as new tab')
     }
-  } catch (error) {
-    console.error('Background: Failed to open side panel:', error)
 
-    // 如果侧边栏失败，尝试打开新标签页作为降级
+    // 更新状态
+    windowModes.set(windowId, 'popup')
+
+  } catch (error) {
+    console.error('Background: Failed to handle icon click:', error)
+
+    // 最终降级处理
     try {
-      console.log('Background: Attempting fallback - opening new tab...')
+      console.log('Background: Final fallback - opening popup tab')
       await chrome.tabs.create({
         url: chrome.runtime.getURL('src/popup/index.html'),
         windowId: tab.windowId
       })
     } catch (fallbackError) {
-      console.error('Background: Fallback also failed:', fallbackError)
+      console.error('Background: All methods failed:', fallbackError)
     }
   }
 })
@@ -67,12 +79,57 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   }
 })
 
+// 存储当前窗口模式状态
+const windowModes = new Map<number, 'popup' | 'sidepanel'>()
+
 // 监听侧边栏相关的消息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log('Background: Received message:', message.type, 'from sender:', sender)
 
   if (message.type === 'TOGGLE_SIDEPANEL') {
     handleToggleSidePanel(sender.tab?.windowId)
+      .then(() => sendResponse({ success: true }))
+      .catch(error => sendResponse({ success: false, error: error.message }))
+    return true
+  }
+
+  if (message.type === 'SWITCH_TO_SIDEPANEL') {
+    handleSwitchToSidePanel(message.windowId)
+      .then(() => sendResponse({ success: true }))
+      .catch(error => sendResponse({ success: false, error: error.message }))
+    return true
+  }
+
+  if (message.type === 'SWITCH_TO_POPUP') {
+    handleSwitchToPopup(message.windowId)
+      .then(() => sendResponse({ success: true }))
+      .catch(error => sendResponse({ success: false, error: error.message }))
+    return true
+  }
+
+  if (message.type === 'GET_WINDOW_MODE') {
+    handleGetWindowMode(message.windowId)
+      .then(mode => sendResponse({ success: true, mode }))
+      .catch(error => sendResponse({ success: false, error: error.message }))
+    return true
+  }
+
+  if (message.type === 'CLOSE_SIDEPANEL') {
+    handleCloseSidePanel(message.windowId)
+      .then(() => sendResponse({ success: true }))
+      .catch(error => sendResponse({ success: false, error: error.message }))
+    return true
+  }
+
+  if (message.type === 'REOPEN_WALLET') {
+    handleReopenWallet(message.windowId)
+      .then(() => sendResponse({ success: true }))
+      .catch(error => sendResponse({ success: false, error: error.message }))
+    return true
+  }
+
+  if (message.type === 'CLOSE_SIDEPANEL_PHANTOM_STYLE') {
+    handleCloseSidePanelPhantomStyle(message.windowId)
       .then(() => sendResponse({ success: true }))
       .catch(error => sendResponse({ success: false, error: error.message }))
     return true
@@ -111,6 +168,246 @@ async function handleToggleSidePanel(windowId?: number) {
   }
 }
 
+// 切换到侧边栏模式
+async function handleSwitchToSidePanel(windowId?: number) {
+  console.log('Background: Switching to side panel mode for window:', windowId)
+
+  if (!chrome.sidePanel) {
+    throw new Error('Side Panel API not available')
+  }
+
+  try {
+    // 获取目标窗口ID
+    let targetWindowId = windowId
+    if (!targetWindowId) {
+      const currentWindow = await chrome.windows.getCurrent()
+      targetWindowId = currentWindow.id
+    }
+
+    if (!targetWindowId) {
+      throw new Error('Unable to determine target window')
+    }
+
+    // 记录当前模式
+    windowModes.set(targetWindowId, 'sidepanel')
+
+    // 打开侧边栏
+    await chrome.sidePanel.open({ windowId: targetWindowId })
+    console.log('Background: Successfully switched to side panel mode')
+
+  } catch (error) {
+    console.error('Background: Failed to switch to side panel:', error)
+    throw error
+  }
+}
+
+// 切换到弹窗模式
+async function handleSwitchToPopup(windowId?: number) {
+  console.log('Background: Switching to popup mode for window:', windowId)
+
+  try {
+    // 获取目标窗口ID
+    let targetWindowId = windowId
+    if (!targetWindowId) {
+      const currentWindow = await chrome.windows.getCurrent()
+      targetWindowId = currentWindow.id
+    }
+
+    if (!targetWindowId) {
+      throw new Error('Unable to determine target window')
+    }
+
+    // 记录当前模式
+    windowModes.set(targetWindowId, 'popup')
+
+    // 关闭侧边栏（如果打开的话）
+    if (chrome.sidePanel) {
+      try {
+        // 注意：Chrome 扩展 API 没有直接关闭侧边栏的方法
+        // 我们只能通过打开一个新的弹窗来"切换"
+        console.log('Background: Side panel cannot be directly closed, opening popup instead')
+      } catch (error) {
+        console.log('Background: Could not close side panel:', error)
+      }
+    }
+
+    // 打开弹窗（通过创建新标签页的方式）
+    await chrome.tabs.create({
+      url: chrome.runtime.getURL('src/popup/index.html'),
+      windowId: targetWindowId
+    })
+
+    console.log('Background: Successfully switched to popup mode')
+
+  } catch (error) {
+    console.error('Background: Failed to switch to popup:', error)
+    throw error
+  }
+}
+
+// 获取当前窗口模式
+async function handleGetWindowMode(windowId?: number) {
+  try {
+    let targetWindowId = windowId
+    if (!targetWindowId) {
+      const currentWindow = await chrome.windows.getCurrent()
+      targetWindowId = currentWindow.id
+    }
+
+    if (!targetWindowId) {
+      throw new Error('Unable to determine target window')
+    }
+
+    const mode = windowModes.get(targetWindowId) || 'popup'
+    console.log('Background: Current window mode for', targetWindowId, ':', mode)
+    return mode
+
+  } catch (error) {
+    console.error('Background: Failed to get window mode:', error)
+    throw error
+  }
+}
+
+// 关闭侧边栏
+async function handleCloseSidePanel(windowId?: number) {
+  console.log('Background: Closing side panel for window:', windowId)
+
+  try {
+    // 获取目标窗口ID
+    let targetWindowId = windowId
+    if (!targetWindowId) {
+      const currentWindow = await chrome.windows.getCurrent()
+      targetWindowId = currentWindow.id
+    }
+
+    if (!targetWindowId) {
+      throw new Error('Unable to determine target window')
+    }
+
+    // 更新窗口模式状态
+    windowModes.set(targetWindowId, 'popup')
+
+    // Chrome 扩展 API 没有直接关闭侧边栏的方法
+    // 我们可以尝试以下方法：
+
+    // 方法1: 尝试设置侧边栏为禁用状态
+    if (chrome.sidePanel && chrome.sidePanel.setOptions) {
+      try {
+        await chrome.sidePanel.setOptions({
+          enabled: false
+        })
+        console.log('Background: Side panel disabled')
+      } catch (error) {
+        console.log('Background: Could not disable side panel:', error)
+      }
+    }
+
+    // 方法2: 尝试打开一个空的侧边栏页面
+    if (chrome.sidePanel && chrome.sidePanel.setOptions) {
+      try {
+        await chrome.sidePanel.setOptions({
+          path: 'about:blank'
+        })
+        console.log('Background: Side panel path set to blank')
+      } catch (error) {
+        console.log('Background: Could not set blank path:', error)
+      }
+    }
+
+    console.log('Background: Side panel close attempt completed')
+
+  } catch (error) {
+    console.error('Background: Failed to close side panel:', error)
+    throw error
+  }
+}
+
+// 重新打开钱包
+async function handleReopenWallet(windowId?: number) {
+  console.log('Background: Reopening wallet for window:', windowId)
+
+  try {
+    // 获取目标窗口ID
+    let targetWindowId = windowId
+    if (!targetWindowId) {
+      const currentWindow = await chrome.windows.getCurrent()
+      targetWindowId = currentWindow.id
+    }
+
+    if (!targetWindowId) {
+      throw new Error('Unable to determine target window')
+    }
+
+    // 重新打开侧边栏
+    if (chrome.sidePanel) {
+      try {
+        // 首先确保侧边栏是启用的
+        await chrome.sidePanel.setOptions({
+          enabled: true,
+          path: 'src/sidepanel/index.html'
+        })
+
+        // 然后打开侧边栏
+        await chrome.sidePanel.open({ windowId: targetWindowId })
+        windowModes.set(targetWindowId, 'sidepanel')
+        console.log('Background: Successfully reopened side panel')
+      } catch (error) {
+        console.log('Background: Could not reopen side panel, opening popup instead:', error)
+        // 降级：打开弹窗
+        await chrome.tabs.create({
+          url: chrome.runtime.getURL('src/popup/index.html'),
+          windowId: targetWindowId
+        })
+        windowModes.set(targetWindowId, 'popup')
+      }
+    } else {
+      // 没有侧边栏 API，打开弹窗
+      await chrome.tabs.create({
+        url: chrome.runtime.getURL('src/popup/index.html'),
+        windowId: targetWindowId
+      })
+      windowModes.set(targetWindowId, 'popup')
+    }
+
+    console.log('Background: Wallet reopened successfully')
+
+  } catch (error) {
+    console.error('Background: Failed to reopen wallet:', error)
+    throw error
+  }
+}
+
+// Phantom 风格关闭侧边栏
+async function handleCloseSidePanelPhantomStyle(windowId?: number) {
+  console.log('Background: Closing side panel (Phantom-style) for window:', windowId)
+
+  try {
+    // 获取目标窗口ID
+    let targetWindowId = windowId
+    if (!targetWindowId) {
+      const currentWindow = await chrome.windows.getCurrent()
+      targetWindowId = currentWindow.id
+    }
+
+    if (!targetWindowId) {
+      throw new Error('Unable to determine target window')
+    }
+
+    // 更新窗口模式状态为关闭
+    windowModes.set(targetWindowId, 'closed')
+
+    // Chrome 扩展 API 没有直接关闭侧边栏的方法
+    // Phantom 的做法是让侧边栏内容自己处理关闭逻辑
+
+    console.log('Background: Side panel close signal sent (Phantom-style)')
+    console.log('Background: Window mode set to closed for window:', targetWindowId)
+
+  } catch (error) {
+    console.error('Background: Failed to close side panel (Phantom-style):', error)
+    throw error
+  }
+}
+
 // 初始化扩展
 async function initializeExtension() {
   try {
@@ -142,23 +439,45 @@ async function initializeExtension() {
   }
 }
 
-// 消息处理
+// 消息处理（仅处理钱包相关消息）
 chrome.runtime.onMessage.addListener((
   message: ChromeMessage,
   sender,
   sendResponse
 ) => {
-  console.log('Background received message:', message.type, message.data)
-  
+  // 只处理钱包相关的消息类型
+  const walletMessageTypes = [
+    MESSAGE_TYPES.GET_WALLETS,
+    MESSAGE_TYPES.GET_CURRENT_WALLET,
+    MESSAGE_TYPES.SET_CURRENT_WALLET,
+    MESSAGE_TYPES.CREATE_WALLET,
+    MESSAGE_TYPES.IMPORT_WALLET,
+    MESSAGE_TYPES.DELETE_WALLET,
+    MESSAGE_TYPES.GET_BALANCE,
+    MESSAGE_TYPES.TRANSFER,
+    MESSAGE_TYPES.SWAP,
+    MESSAGE_TYPES.GET_SETTINGS,
+    MESSAGE_TYPES.UPDATE_SETTINGS,
+    MESSAGE_TYPES.GET_SUPPORTED_CHAINS,
+    MESSAGE_TYPES.REFRESH_TOKEN_PRICES
+  ]
+
+  if (!walletMessageTypes.includes(message.type)) {
+    // 不是钱包消息，让第一个处理器处理
+    return false
+  }
+
+  console.log('Background received wallet message:', message.type, message.data)
+
   handleMessage(message)
     .then(response => {
       sendResponse({ success: true, data: response })
     })
     .catch(error => {
-      console.error('Message handling error:', error)
+      console.error('Wallet message handling error:', error)
       sendResponse({ success: false, error: error.message })
     })
-  
+
   // 返回true表示异步响应
   return true
 })
@@ -206,7 +525,9 @@ async function handleMessage(message: ChromeMessage): Promise<any> {
       return await refreshTokenPrices(message.data.walletId)
 
     default:
-      throw new Error(`Unknown message type: ${message.type}`)
+      // 不应该到达这里，因为我们已经在上面过滤了消息类型
+      console.warn('Unexpected wallet message type:', message.type)
+      return null
   }
 }
 
@@ -247,13 +568,8 @@ async function getWallets() {
     throw new Error('Device ID not found')
   }
 
-  // 构建完整的 API URL
-  const baseUrl = APP_CONFIG.API_BASE_URL.startsWith('http')
-    ? APP_CONFIG.API_BASE_URL
-    : `http://localhost:3000${APP_CONFIG.API_BASE_URL}`
-
   // 从API获取钱包列表
-  const response = await fetch(`${baseUrl}/wallets/?device_id=${deviceId}`)
+  const response = await fetch(`${APP_CONFIG.API_BASE_URL}/wallets/?device_id=${deviceId}`)
   const data = await response.json()
   
   if (data.state === 'success') {
@@ -276,12 +592,7 @@ async function createWallet(walletData: any) {
     throw new Error('Device ID not found')
   }
   
-  // 构建完整的 API URL
-  const baseUrl = APP_CONFIG.API_BASE_URL.startsWith('http')
-    ? APP_CONFIG.API_BASE_URL
-    : `http://localhost:3000${APP_CONFIG.API_BASE_URL}`
-
-  const response = await fetch(`${baseUrl}/wallets/`, {
+  const response = await fetch(`${APP_CONFIG.API_BASE_URL}/wallets/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -328,15 +639,11 @@ async function importWallet(importData: any) {
     device_id: deviceId
   }
 
-  // 构建完整的 API URL
-  const baseUrl = APP_CONFIG.API_BASE_URL.startsWith('http')
-    ? APP_CONFIG.API_BASE_URL
-    : `http://localhost:3000${APP_CONFIG.API_BASE_URL}`
-  const apiUrl = `${baseUrl}/wallets/${endpoint}/`
+  const apiUrl = `${APP_CONFIG.API_BASE_URL}/wallets/${endpoint}/`
 
   console.log('Import wallet request:', {
     endpoint,
-    baseUrl,
+    baseUrl: APP_CONFIG.API_BASE_URL,
     apiUrl,
     body: requestBody
   })
@@ -507,12 +814,7 @@ async function updateSettings(settings: any) {
 
 // 获取支持的链列表
 async function getSupportedChains() {
-  // 构建完整的 API URL
-  const baseUrl = APP_CONFIG.API_BASE_URL.startsWith('http')
-    ? APP_CONFIG.API_BASE_URL
-    : `http://localhost:3000${APP_CONFIG.API_BASE_URL}`
-
-  const response = await fetch(`${baseUrl}/wallets/get_supported_chains/`)
+  const response = await fetch(`${APP_CONFIG.API_BASE_URL}/wallets/get_supported_chains/`)
   const data = await response.json()
 
   if (data.state === 'success') {
@@ -524,12 +826,7 @@ async function getSupportedChains() {
 
 // 刷新代币价格
 async function refreshTokenPrices(walletId: number) {
-  // 构建完整的 API URL
-  const baseUrl = APP_CONFIG.API_BASE_URL.startsWith('http')
-    ? APP_CONFIG.API_BASE_URL
-    : `http://localhost:3000${APP_CONFIG.API_BASE_URL}`
-
-  const response = await fetch(`${baseUrl}/wallets/${walletId}/get_token_prices/`, {
+  const response = await fetch(`${APP_CONFIG.API_BASE_URL}/wallets/${walletId}/get_token_prices/`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json'

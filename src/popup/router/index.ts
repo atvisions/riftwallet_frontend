@@ -4,7 +4,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'Home',
-    component: () => import('../views/Home.vue')
+    component: () => import('../views/HomeSidePanel.vue')
   },
   {
     path: '/wallet/:id',
@@ -30,6 +30,21 @@ const routes: RouteRecordRaw[] = [
     path: '/history',
     name: 'History',
     component: () => import('../views/History.vue')
+  },
+  {
+    path: '/markets',
+    name: 'Markets',
+    component: () => import('../views/Markets.vue')
+  },
+  {
+    path: '/trade',
+    name: 'Trade',
+    component: () => import('../views/Trade.vue')
+  },
+  {
+    path: '/discover',
+    name: 'Discover',
+    component: () => import('../views/Discover.vue')
   },
   {
     path: '/settings',

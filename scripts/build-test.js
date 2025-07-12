@@ -15,7 +15,7 @@ const requiredFiles = [
   'public/manifest.json',
   'src/popup/main.ts',
   'src/popup/App.vue',
-  'src/popup/views/Home.vue',
+  'src/popup/views/HomeSidePanel.vue',
   'src/background/index.ts',
   'src/content/index.ts',
   'src/shared/types/index.ts',

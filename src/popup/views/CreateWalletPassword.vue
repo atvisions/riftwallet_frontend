@@ -1,70 +1,71 @@
 <template>
-  <div class="create-wallet-password-page">
-    <div class="header">
-      <button class="back-btn" @click="goBack">
-        <i class="ri-arrow-left-line"></i>
-      </button>
-      <h1>Create Wallet</h1>
-      <div class="placeholder"></div>
+  <PageContainer
+    title="Create Wallet"
+    :show-header="true"
+    :show-footer="true"
+    :show-back-button="true"
+    :custom-back-action="goBack"
+    max-width="420px"
+    padding="24px"
+    :centered="true"
+  >
+    <div class="description">
+      <h2>Enter Your Password</h2>
+      <p>Enter your payment password to create the wallet with the verified seed phrase.</p>
     </div>
-    
-    <div class="content">
-      <div class="description">
-        <h2>Enter Your Password</h2>
-        <p>Enter your payment password to create the wallet with the verified seed phrase.</p>
-      </div>
-      
-      <div class="password-section">
-        <div class="input-group">
-          <label for="password">Payment Password</label>
-          <div class="input-wrapper">
-            <input
-              id="password"
-              v-model="password"
-              :type="showPassword ? 'text' : 'password'"
-              placeholder="Enter your password"
-              class="password-input"
-              :class="{ 'error': passwordError }"
-              @input="validatePassword"
-              autofocus
-            >
-            <button
-              type="button"
-              @click="showPassword = !showPassword"
-              class="toggle-password"
-            >
-              <i :class="showPassword ? 'ri-eye-off-line' : 'ri-eye-line'"></i>
-            </button>
-          </div>
-          <div v-if="passwordError" class="error-message">
-            {{ passwordError }}
-          </div>
+
+    <div class="password-section">
+      <div class="input-group">
+        <label for="password">Payment Password</label>
+        <div class="input-wrapper">
+          <input
+            id="password"
+            v-model="password"
+            :type="showPassword ? 'text' : 'password'"
+            placeholder="Enter your password"
+            class="password-input"
+            :class="{ 'error': passwordError }"
+            @input="validatePassword"
+            autofocus
+          >
+          <button
+            type="button"
+            @click="showPassword = !showPassword"
+            class="toggle-password"
+          >
+            <i :class="showPassword ? 'ri-eye-off-line' : 'ri-eye-line'"></i>
+          </button>
+        </div>
+        <div v-if="passwordError" class="error-message">
+          {{ passwordError }}
         </div>
       </div>
-      
-      <div class="error-message" v-if="error">
-        <i class="ri-error-warning-line"></i>
-        {{ error }}
+    </div>
+
+    <div class="error-message" v-if="error">
+      <i class="ri-error-warning-line"></i>
+      {{ error }}
+    </div>
+
+    <template #footer>
+      <div class="footer">
+        <button
+          class="create-btn"
+          :disabled="!canCreateWallet || submitting"
+          @click="createWallet"
+        >
+          <span v-if="submitting">
+            <i class="ri-loader-4-line animate-spin"></i>
+            Creating & Loading Wallet...
+          </span>
+          <span v-else>
+            Create Wallet
+            <i class="ri-check-line"></i>
+          </span>
+        </button>
       </div>
-    </div>
-    
-    <div class="footer">
-      <button 
-        class="create-btn" 
-        :disabled="!canCreateWallet || submitting"
-        @click="createWallet"
-      >
-        <span v-if="submitting">
-          <i class="ri-loader-4-line animate-spin"></i>
-          Creating & Loading Wallet...
-        </span>
-        <span v-else>
-          Create Wallet
-          <i class="ri-check-line"></i>
-        </span>
-      </button>
-    </div>
-  </div>
+    </template>
+  </PageContainer>
 </template>
 
 <script setup lang="ts">
@@ -73,6 +74,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@shared/stores/auth'
 import { useWalletStore } from '@shared/stores/wallet'
 import { APP_CONFIG } from '@shared/constants'
+import PageContainer from '@/popup/components/PageContainer.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

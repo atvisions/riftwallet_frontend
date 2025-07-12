@@ -1,13 +1,14 @@
 <template>
-  <div class="send-page">
-    <div class="header">
-      <button @click="$router.go(-1)" class="back-btn">
-        <i class="ri-arrow-left-line"></i>
-      </button>
-      <h1>Send</h1>
-    </div>
-    
-    <div class="content">
+  <PageContainer
+    title="Send"
+    :show-header="true"
+    :show-footer="false"
+    :show-back-button="true"
+    :custom-back-action="() => $router.go(-1)"
+    max-width="420px"
+    padding="0"
+    :centered="true"
+  >
       <div class="form-section">
         <label>To Address</label>
         <input 
@@ -41,13 +42,13 @@
       <button @click="handleSend" :disabled="!canSend" class="send-btn">
         Send Transaction
       </button>
-    </div>
-  </div>
+  </PageContainer>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useWalletStore } from '@shared/stores/wallet'
+import PageContainer from '@/popup/components/PageContainer.vue'
 
 const walletStore = useWalletStore()
 

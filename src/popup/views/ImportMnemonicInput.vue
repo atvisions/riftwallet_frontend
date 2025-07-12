@@ -1,13 +1,14 @@
 <template>
-  <div class="import-mnemonic-input-page">
-    <div class="header">
-      <button @click="$router.go(-1)" class="back-btn">
-        <i class="ri-arrow-left-line"></i>
-      </button>
-      <h1>Import Recovery Phrase</h1>
-    </div>
-    
-    <div class="content">
+  <PageContainer
+    title="Import Recovery Phrase"
+    :show-header="true"
+    :show-footer="true"
+    :show-back-button="true"
+    :custom-back-action="() => $router.go(-1)"
+    max-width="420px"
+    padding="24px"
+    :centered="true"
+  >
       <div class="form-container">
         <!-- 选择的链信息 -->
         <div v-if="selectedChain" class="selected-chain-info">
@@ -68,23 +69,27 @@
 
         <!-- Error Message -->
         <div v-if="error" class="error-message">{{ error }}</div>
+      </div>
 
+    <template #footer>
+      <div class="footer">
         <!-- Import Button -->
-        <button 
-          class="import-btn" 
+        <button
+          class="import-btn"
           :disabled="!canImport"
           @click="importWallet"
         >
           Import Wallet
         </button>
       </div>
-    </div>
-  </div>
+    </template>
+  </PageContainer>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import PageContainer from '@/popup/components/PageContainer.vue'
 
 const router = useRouter()
 

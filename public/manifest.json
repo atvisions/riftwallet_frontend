@@ -13,6 +13,7 @@
   
   "action": {
     "default_title": "Riftwallet",
+    "default_popup": "src/popup/index.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
@@ -34,7 +35,8 @@
       "matches": ["<all_urls>"],
       "js": ["content/index.js"],
       "run_at": "document_start",
-      "all_frames": true
+      "all_frames": true,
+      "type": "module"
     }
   ],
   
@@ -49,7 +51,9 @@
     "sidePanel",
     "windows",
     "tabs",
-    "contextMenus"
+    "contextMenus",
+    "clipboardRead",
+    "clipboardWrite"
   ],
   
   "host_permissions": [
