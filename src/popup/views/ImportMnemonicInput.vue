@@ -4,6 +4,7 @@
     :show-header="true"
     :show-footer="true"
     :scrollable="true"
+    padding="16px"
     @back="$router.go(-1)"
   >
     <!-- 自定义头部 -->
@@ -19,8 +20,7 @@
     </template>
 
     <!-- 主要内容 -->
-    <div class="page-content">
-      <div class="form-container">
+    <div class="form-container">
         <!-- 选择的链信息 -->
         <div v-if="selectedChain" class="selected-chain-info">
           <img :src="selectedChain.logo" :alt="selectedChain.name" class="chain-logo">
@@ -81,7 +81,6 @@
         <!-- Error Message -->
         <div v-if="error" class="error-message">{{ error }}</div>
       </div>
-    </div>
 
     <template #footer>
       <div class="footer">
@@ -198,14 +197,12 @@ onMounted(() => {
       selectedChain.value = JSON.parse(chainData)
     } catch (err) {
       console.error('Failed to parse chain data:', err)
-      // 设置导入类型并返回链选择页面
-      sessionStorage.setItem('import_type', 'mnemonic')
-      router.push('/import-private-key-select-chain')
+      // 返回链选择页面
+      router.push('/select-chain?mode=import-mnemonic')
     }
   } else {
-    // 如果没有选择的链，设置导入类型并返回链选择页面
-    sessionStorage.setItem('import_type', 'mnemonic')
-    router.push('/import-private-key-select-chain')
+    // 如果没有选择的链，返回链选择页面
+    router.push('/select-chain?mode=import-mnemonic')
   }
 
   // 监听输入变化
@@ -256,16 +253,7 @@ onMounted(() => {
   color: white;
 }
 
-// 主要内容容器
-.page-content {
-  padding: 24px;
-  max-width: 420px;
-  margin: 0 auto;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
+
 .import-mnemonic-input-page {
   width: 375px;
   height: 600px; // 固定高度，适应插件环境
@@ -317,7 +305,13 @@ onMounted(() => {
 }
 
 .form-container {
-  max-width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 120px; /* 为底部固定按钮留出空间 */
 }
 
 
@@ -465,9 +459,22 @@ onMounted(() => {
   }
 }
 
+.footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px 20px 24px;
+  background: linear-gradient(180deg, transparent 0%, #0F172A 20%, #0F172A 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  z-index: 10;
+  min-height: 80px;
+}
+
 .import-btn {
   width: 100%;
-  padding: 16px;
+  padding: 18px 24px;
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   border: none;
   border-radius: 16px;
@@ -476,6 +483,7 @@ onMounted(() => {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  min-height: 56px;
   margin-top: 24px;
   
   &:hover:not(:disabled) {

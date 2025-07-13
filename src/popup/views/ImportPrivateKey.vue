@@ -275,13 +275,23 @@ const handleImport = async () => {
 
 // 主要内容容器
 .page-content {
-  padding: 24px;
+  padding: 16px;
   max-width: 420px;
   margin: 0 auto;
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
+}
+
+// 弹窗模式下的特殊样式
+:global(.layout-popup) .page-content {
+  padding: 16px !important;
+}
+
+// 侧边栏模式下的特殊样式
+:global(.layout-sidepanel) .page-content {
+  padding: 16px !important;
 }
 .import-private-key-page {
   width: 375px;

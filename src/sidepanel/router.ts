@@ -72,11 +72,7 @@ const routes: RouteRecordRaw[] = [
     name: 'ImportPrivateKey',
     component: () => import('../popup/views/ImportPrivateKey.vue')
   },
-  {
-    path: '/import-private-key-select-chain',
-    name: 'ImportPrivateKeySelectChain',
-    component: () => import('../popup/views/ImportPrivateKeySelectChain.vue')
-  },
+
   {
     path: '/import-private-key-input',
     name: 'ImportPrivateKeyInput',

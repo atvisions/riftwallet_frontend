@@ -163,13 +163,26 @@ watch(() => router.currentRoute.value.path, async (newPath, oldPath) => {
     return
   }
 
+  // 如果从钱包创建相关页面跳转到首页，不要重新执行路由逻辑
+  const walletCreationPages = ['/select-chain', '/verify-mnemonic', '/confirm-mnemonic', '/create-wallet-password']
+  if (walletCreationPages.includes(oldPath) && newPath === '/') {
+    console.log('Skipping route logic after wallet creation')
+    return
+  }
+
   // 如果跳转到首页且已经初始化过，检查是否需要重新验证
   if (newPath === '/' && isInitialized.value) {
-    // 只有在会话过期的情况下才重新验证
-    if (authStore.hasPaymentPassword && !authStore.isPasswordSessionValid) {
-      console.log('Session expired, redirecting to verify password')
-      router.push('/verify-password')
-    }
+    // 给一个短暂的延迟，让密码验证的状态更新完成
+    setTimeout(async () => {
+      // 重新检查会话状态
+      await authStore.checkPasswordSession()
+
+      // 只有在会话确实过期的情况下才重新验证
+      if (authStore.hasPaymentPassword && !authStore.isPasswordSessionValid) {
+        console.log('Session expired after delay check, redirecting to verify password')
+        router.push('/verify-password')
+      }
+    }, 100) // 100ms 延迟
   }
 })
 

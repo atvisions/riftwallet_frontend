@@ -4,6 +4,7 @@
     :show-header="true"
     :show-footer="true"
     :scrollable="true"
+    padding="16px"
     @back="goBack"
   >
     <!-- 自定义头部 -->
@@ -21,7 +22,7 @@
     <!-- 主要内容 -->
     <div class="page-content">
       <div class="description">
-        <p>Choose the blockchain network for your new wallet</p>
+        <p>{{ descriptionText }}</p>
       </div>
       
       <div class="chains-container" v-if="!loading">
@@ -97,8 +98,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@shared/stores/auth'
 import { useWalletStore } from '@shared/stores/wallet'
 import { APP_CONFIG } from '@shared/constants'
@@ -113,6 +114,7 @@ interface SupportedChain {
 }
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 
 // 响应式数据
@@ -121,6 +123,21 @@ const submitting = ref(false)
 const error = ref('')
 const supportedChains = ref<SupportedChain[]>([])
 const selectedChain = ref<SupportedChain | null>(null)
+
+// 获取模式参数 (create, import-mnemonic, import-private-key)
+const mode = computed(() => route.query.mode as string || 'create')
+
+// 计算描述文本
+const descriptionText = computed(() => {
+  switch (mode.value) {
+    case 'import-mnemonic':
+      return 'Choose the blockchain network for your recovery phrase import'
+    case 'import-private-key':
+      return 'Choose the blockchain network for your private key import'
+    default:
+      return 'Choose the blockchain network for your new wallet'
+  }
+})
 
 // 返回上一页
 const goBack = () => {
@@ -154,39 +171,56 @@ const selectChain = (chain: SupportedChain) => {
   selectedChain.value = chain
 }
 
-// 继续到助记词页面
+// 继续操作 - 根据模式执行不同逻辑
 const continueToMnemonic = async () => {
   if (!selectedChain.value) return
-  
+
   try {
     submitting.value = true
-    
-    const response = await fetch(`${APP_CONFIG.API_BASE_URL}/wallets/select_chain/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        device_id: authStore.deviceId,
-        chain: selectedChain.value.chain
-      })
-    })
-    
-    const data = await response.json()
-    
-    if (data.state === 'success') {
-      // API 返回了助记词，需要用户验证
-      console.log('Chain selected successfully:', data.data)
-      console.log('Generated mnemonic:', data.data.mnemonic)
 
-      // 将助记词和链信息存储到 sessionStorage 供验证页面使用
-      sessionStorage.setItem('generated_mnemonic', data.data.mnemonic)
-      sessionStorage.setItem('selected_chain', selectedChain.value.chain)
+    switch (mode.value) {
+      case 'import-mnemonic':
+        // 助记词导入模式
+        sessionStorage.setItem('mnemonic_selected_chain', JSON.stringify(selectedChain.value))
+        router.push('/import-mnemonic-input')
+        break
 
-      // 跳转到助记词验证页面
-      router.push('/verify-mnemonic')
-    } else {
-      throw new Error(data.message || 'Failed to select chain')
+      case 'import-private-key':
+        // 私钥导入模式
+        sessionStorage.setItem('import_selected_chain', JSON.stringify(selectedChain.value))
+        router.push('/import-private-key-input')
+        break
+
+      default:
+        // 创建钱包模式 - 调用 select_chain API
+        const response = await fetch(`${APP_CONFIG.API_BASE_URL}/wallets/select_chain/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            device_id: authStore.deviceId,
+            chain: selectedChain.value.chain
+          })
+        })
+
+        const data = await response.json()
+
+        if (data.state === 'success') {
+          // API 返回了助记词，需要用户验证
+          console.log('Chain selected successfully:', data.data)
+          console.log('Generated mnemonic:', data.data.mnemonic)
+
+          // 将助记词和链信息存储到 sessionStorage 供验证页面使用
+          sessionStorage.setItem('generated_mnemonic', data.data.mnemonic)
+          sessionStorage.setItem('selected_chain', selectedChain.value.chain)
+
+          // 跳转到助记词验证页面
+          router.push('/verify-mnemonic')
+        } else {
+          throw new Error(data.message || 'Failed to select chain')
+        }
+        break
     }
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to select chain'
@@ -246,13 +280,12 @@ onMounted(() => {
 
 // 主要内容容器
 .page-content {
-  padding: 24px;
   max-width: 420px;
   margin: 0 auto;
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
 // 描述文本
@@ -745,9 +778,6 @@ onMounted(() => {
 
 // 响应式调整
 @media (max-width: 400px) {
-  .page-content {
-    padding: 20px 16px;
-  }
 
   .chains-container {
     gap: 12px;

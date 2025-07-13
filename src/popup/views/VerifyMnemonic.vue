@@ -4,6 +4,7 @@
     :show-header="true"
     :show-footer="true"
     :scrollable="true"
+    padding="16px"
     @back="goBack"
   >
     <!-- 自定义头部 -->
@@ -19,8 +20,7 @@
     </template>
 
     <!-- 主要内容 -->
-    <div class="page-content">
-      <div class="mnemonic-container">
+    <div class="mnemonic-container">
         <div class="header-section">
           <h2>Your Recovery Phrase</h2>
           <p>Write down these 12 words in order and keep them safe.</p>
@@ -61,7 +61,6 @@
           </div>
         </div>
       </div>
-    </div>
 
     <template #footer>
       <div class="bottom-section">
@@ -210,40 +209,34 @@ onMounted(() => {
   color: white;
 }
 
-// 主要内容容器
-.page-content {
-  padding: 24px;
-  max-width: 420px;
-  margin: 0 auto;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
 .mnemonic-container {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  max-width: 100%;
+  gap: 20px;
+  max-width: 420px;
   margin: 0 auto;
+  width: 100%;
+  min-height: calc(100vh - 140px);
+  flex: 1;
+  padding-bottom: 120px; /* 为底部固定按钮留出空间 */
 }
 
 .header-section {
   text-align: center;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 
   h2 {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 600;
-    margin: 0 0 8px 0;
+    margin: 0 0 6px 0;
     color: #f1f5f9;
   }
 
   p {
     color: #94a3b8;
     margin: 0;
-    font-size: 14px;
-    line-height: 1.5;
+    font-size: 13px;
+    line-height: 1.4;
   }
 }
 
@@ -251,27 +244,29 @@ onMounted(() => {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
-  padding: 16px;
+  padding: 20px 16px;
   margin-bottom: 16px;
 
   .word-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    min-width: 0; // 确保网格可以收缩
+    gap: 12px;
+    min-width: 0;
   }
 
   .word-item {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px;
-    padding: 10px 6px;
+    padding: 12px 8px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     transition: all 0.2s ease;
-    min-width: 0; // 确保可以收缩
+    min-width: 0;
+    min-height: 60px;
+    justify-content: center;
 
     &:hover {
       background: rgba(255, 255, 255, 0.08);
@@ -282,24 +277,28 @@ onMounted(() => {
       font-size: 10px;
       color: #64748b;
       font-weight: 600;
+      line-height: 1;
     }
 
     .word-text {
       color: #f1f5f9;
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 500;
       text-align: center;
-      word-break: break-all;
+      word-break: break-word;
+      line-height: 1.2;
     }
   }
 }
 
 .action-section {
+  margin-top: 8px;
+
   .copy-btn {
     width: 100%;
     background: linear-gradient(135deg, #6366f1, #8b5cf6);
     border: none;
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 12px 16px;
     color: white;
     font-size: 14px;
@@ -312,12 +311,17 @@ onMounted(() => {
     transition: all 0.3s ease;
 
     &:hover {
+      background: linear-gradient(135deg, #5855eb, #7c3aed);
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+      box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+    }
+
+    &:active {
+      transform: translateY(0);
     }
 
     i {
-      font-size: 14px;
+      font-size: 16px;
     }
   }
 }
@@ -344,7 +348,8 @@ onMounted(() => {
   border: 1px solid rgba(16, 185, 129, 0.2);
   border-radius: 8px;
   padding: 12px;
-  margin-bottom: 16px;
+  margin-top: auto;
+  margin-bottom: 0;
 
   .tips-content {
     display: flex;
@@ -374,12 +379,21 @@ onMounted(() => {
 }
 
 .bottom-section {
-  padding: 20px;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px 20px 24px;
+  background: linear-gradient(180deg, transparent 0%, #0F172A 20%, #0F172A 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  z-index: 10;
+  min-height: 80px;
 }
 
 .verify-btn {
   width: 100%;
-  padding: 16px 24px;
+  padding: 18px 24px;
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   border: none;
   border-radius: 12px;
@@ -388,6 +402,7 @@ onMounted(() => {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -430,70 +445,61 @@ onMounted(() => {
 }
 
 // 响应式设计
-// 响应式设计
 @media (max-width: 480px) {
   .mnemonic-container {
-    gap: 20px;
+    gap: 16px;
   }
 
   .header-section {
     h2 {
-      font-size: 18px;
+      font-size: 16px;
     }
 
     p {
-      font-size: 13px;
+      font-size: 12px;
     }
   }
 
   .mnemonic-display {
-    padding: 12px;
+    padding: 16px 12px;
 
     .word-grid {
       grid-template-columns: repeat(3, 1fr) !important;
-      gap: 6px;
+      gap: 8px;
     }
 
     .word-item {
-      padding: 8px 4px;
+      padding: 10px 6px;
+      min-height: 55px;
 
       .word-number {
         font-size: 9px;
       }
 
       .word-text {
-        font-size: 11px;
+        font-size: 12px;
       }
     }
   }
 
   .action-section {
     .copy-btn {
-      padding: 10px 12px;
+      padding: 10px 16px;
       font-size: 13px;
     }
   }
-}
-
-// 弹窗模式特殊样式
-:global(.layout-popup) .verify-mnemonic-container {
-  min-height: calc(600px - 120px);
-  padding: 20px;
-
-  .content-area {
-    gap: 18px;
-    margin-bottom: 16px;
-  }
 
   .bottom-section {
-    padding-top: 12px;
+    padding: 12px;
   }
 
   .verify-btn {
-    padding: 14px 20px;
-    font-size: 15px;
+    padding: 12px 20px;
+    font-size: 14px;
   }
 }
+
+
 
 @keyframes spin {
   0% { transform: rotate(0deg); }

@@ -23,7 +23,7 @@
 
     <!-- 主要内容区域 -->
     <main class="layout-main" :class="mainClasses">
-      <div class="main-content" :class="contentClasses">
+      <div class="main-content" :class="contentClasses" :style="contentStyle">
         <slot></slot>
       </div>
     </main>
@@ -113,6 +113,10 @@ const contentClasses = computed(() => ({
   'content-padded': props.padding !== '0'
 }))
 
+const contentStyle = computed(() => ({
+  padding: props.padding !== '0' ? props.padding : undefined
+}))
+
 onMounted(() => {
   console.log('🎯 ResponsiveLayout mounted with props:', {
     mode: props.mode,
@@ -171,12 +175,12 @@ onUnmounted(() => {
 
 .layout-popup .layout-header {
   height: 60px;
-  padding: 0 16px;
+  padding: 0 10px;
 }
 
 .layout-sidepanel .layout-header {
   height: 64px;
-  padding: 0 24px;
+  padding: 0 10px;
 }
 
 .default-header {
@@ -270,13 +274,7 @@ onUnmounted(() => {
   overflow-y: auto;
 }
 
-.content-padded {
-  padding: 0;
-}
 
-.layout-sidepanel .content-padded {
-  padding: 0;
-}
 
 /* 底部样式 */
 .layout-footer {

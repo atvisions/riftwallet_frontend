@@ -101,16 +101,14 @@ const router = useRouter()
 
 // Import mnemonic
 const importMnemonic = () => {
-  // 设置导入类型为助记词，然后跳转到链选择页面
-  sessionStorage.setItem('import_type', 'mnemonic')
-  router.push('/import-private-key-select-chain')
+  // 跳转到统一的链选择页面，使用助记词导入模式
+  router.push('/select-chain?mode=import-mnemonic')
 }
 
 // Import private key
 const importPrivateKey = () => {
-  // 设置导入类型为私钥，然后跳转到链选择页面
-  sessionStorage.setItem('import_type', 'private_key')
-  router.push('/import-private-key-select-chain')
+  // 跳转到统一的链选择页面，使用私钥导入模式
+  router.push('/select-chain?mode=import-private-key')
 }
 </script>
 

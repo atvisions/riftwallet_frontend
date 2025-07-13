@@ -1,8 +1,11 @@
 // Content Script
 // 与网页交互，提供Web3功能
 
-import { ChromeMessage } from '@shared/types'
-import { MESSAGE_TYPES } from '@shared/constants'
+// 定义消息类型常量（避免使用 import）
+const MESSAGE_TYPES = {
+  PROVIDER_REQUEST: 'PROVIDER_REQUEST',
+  INJECT_PROVIDER: 'INJECT_PROVIDER'
+}
 
 console.log('Riftwallet Content Script loaded')
 
@@ -65,19 +68,19 @@ window.addEventListener('message', async (event) => {
 })
 
 // 监听来自background script的消息
-chrome.runtime.onMessage.addListener((message: ChromeMessage, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message: any, sender: any, sendResponse: any) => {
   console.log('Content script received message from background:', message.type)
-  
+
   switch (message.type) {
     case MESSAGE_TYPES.INJECT_PROVIDER:
       injectProvider()
       sendResponse({ success: true })
       break
-      
+
     default:
       sendResponse({ success: false, error: 'Unknown message type' })
   }
-  
+
   return true
 })
 

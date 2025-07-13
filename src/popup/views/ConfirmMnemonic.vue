@@ -4,6 +4,7 @@
     :show-header="true"
     :show-footer="true"
     :scrollable="true"
+    padding="16px"
     @back="goBack"
   >
     <!-- 自定义头部 -->
@@ -19,8 +20,7 @@
     </template>
 
     <!-- 主要内容 -->
-    <div class="page-content">
-      <div class="confirm-container">
+    <div class="confirm-container">
         <div class="header-section">
           <h2>Verify Recovery Phrase</h2>
           <p>Enter your 12-word recovery phrase to confirm you've saved it correctly.</p>
@@ -82,7 +82,6 @@
           {{ error }}
         </div>
       </div>
-    </div>
 
     <template #footer>
       <div class="bottom-section">
@@ -378,22 +377,15 @@ onMounted(() => {
   color: white;
 }
 
-// 主要内容容器
-.page-content {
-  padding: 24px;
-  max-width: 420px;
-  margin: 0 auto;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
 .confirm-container {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  max-width: 100%;
+  gap: 20px;
+  max-width: 420px;
   margin: 0 auto;
+  width: 100%;
+  flex: 1;
+  padding-bottom: 120px; /* 为底部固定按钮留出空间 */
 }
 
 .header-section {
@@ -601,12 +593,21 @@ onMounted(() => {
 }
 
 .bottom-section {
-  padding: 20px;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px 20px 24px;
+  background: linear-gradient(180deg, transparent 0%, #0F172A 20%, #0F172A 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  z-index: 10;
+  min-height: 80px;
 }
 
 .confirm-btn {
   width: 100%;
-  padding: 16px 24px;
+  padding: 18px 24px;
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   border: none;
   border-radius: 12px;
@@ -615,6 +616,7 @@ onMounted(() => {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -737,25 +739,7 @@ onMounted(() => {
   }
 }
 
-// 弹窗模式特殊样式
-:global(.layout-popup) .confirm-mnemonic-container {
-  min-height: calc(600px - 120px);
-  padding: 20px;
 
-  .content-area {
-    gap: 18px;
-    margin-bottom: 16px;
-  }
-
-  .bottom-section {
-    padding-top: 12px;
-  }
-
-  .confirm-btn {
-    padding: 14px 20px;
-    font-size: 15px;
-  }
-}
 
 @keyframes spin {
   0% { transform: rotate(0deg); }

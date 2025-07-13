@@ -56,27 +56,43 @@ export default defineConfig({
         // 注入脚本
         injected: resolve(__dirname, 'src/content/injected.ts')
       },
-      output: {
-        entryFileNames: (chunkInfo) => {
-          const facadeModuleId = chunkInfo.facadeModuleId
-          if (facadeModuleId?.includes('background')) {
-            return 'background/index.js'
+      output: [
+        // 主要输出（ES 模块格式用于 Vue 应用）
+        {
+          entryFileNames: (chunkInfo) => {
+            const facadeModuleId = chunkInfo.facadeModuleId
+            if (facadeModuleId?.includes('background')) {
+              return 'background/index.js'
+            }
+            if (facadeModuleId?.includes('content/index')) {
+              return 'content/index.js'
+            }
+            if (facadeModuleId?.includes('content/injected')) {
+              return 'content/injected.js'
+            }
+            return 'assets/[name]-[hash].js'
+          },
+          chunkFileNames: 'assets/[name]-[hash].js',
+          assetFileNames: (assetInfo) => {
+            if (assetInfo.name?.endsWith('.html')) {
+              return '[name].[ext]'
+            }
+            return 'assets/[name]-[hash].[ext]'
+          },
+          format: 'es',
+          // 确保 content script 和 background script 不被分割
+          manualChunks: (id) => {
+            // 对于 content script 和 background script，将所有依赖打包到一个文件中
+            if (id.includes('content/index') || id.includes('background/index') || id.includes('content/injected')) {
+              return undefined // 不分割这些文件
+            }
+            return undefined
           }
-          if (facadeModuleId?.includes('content/index')) {
-            return 'content/index.js'
-          }
-          if (facadeModuleId?.includes('content/injected')) {
-            return 'content/injected.js'
-          }
-          return 'assets/[name]-[hash].js'
-        },
-        chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: (assetInfo) => {
-          if (assetInfo.name?.endsWith('.html')) {
-            return '[name].[ext]'
-          }
-          return 'assets/[name]-[hash].[ext]'
         }
+      ],
+      external: (id) => {
+        // 不要将 Chrome API 作为外部依赖
+        return false
       }
     },
     

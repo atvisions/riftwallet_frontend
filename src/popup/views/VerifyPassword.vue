@@ -76,17 +76,20 @@ const error = ref('')
 // 处理密码验证
 const handleVerifyPassword = async () => {
   if (!password.value) return
-  
+
   try {
     loading.value = true
     error.value = ''
-    
+
     const isValid = await authStore.verifyPaymentPassword(password.value)
-    
+
     if (isValid) {
       console.log('Password verification successful, checking wallet status')
 
       // 验证成功，会话已在 verifyPaymentPassword 中设置
+      // 等待一小段时间确保会话状态更新完成
+      await new Promise(resolve => setTimeout(resolve, 50))
+
       // 加载钱包数据并检查是否有钱包
       await walletStore.loadWallets()
 

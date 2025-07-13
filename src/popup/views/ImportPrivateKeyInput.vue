@@ -4,11 +4,12 @@
     :show-header="true"
     :show-footer="true"
     :scrollable="true"
+    padding="16px"
     @back="goBack"
   >
     <!-- 自定义头部 -->
     <template #header>
-      <div class="import-key-header">
+      <div class="page-header">
         <div class="header-left">
           <button @click="goBack" class="back-button">
             <i class="ri-arrow-left-line"></i>
@@ -19,8 +20,7 @@
     </template>
 
     <!-- 主要内容 -->
-    <div class="import-key-content">
-      <div class="form-content">
+    <div class="form-content">
         <!-- Selected Chain Display -->
         <div class="selected-chain" v-if="selectedChain">
           <div class="chain-display">
@@ -100,7 +100,6 @@
           <span>{{ error }}</span>
         </div>
       </div>
-    </div>
 
     <template #footer>
       <div class="bottom-section">
@@ -246,39 +245,77 @@ onMounted(() => {
       selectedChain.value = JSON.parse(chainData)
     } catch (err) {
       console.error('Failed to parse selected chain:', err)
-      router.push('/import-private-key-select-chain')
+      router.push('/select-chain?mode=import-private-key')
     }
   } else {
     // 如果没有选择的链，返回链选择页面
-    router.push('/import-private-key-select-chain')
+    router.push('/select-chain?mode=import-private-key')
   }
 })
 </script>
 
 <style lang="scss" scoped>
-.import-private-key-container {
+// 自定义头部样式
+.page-header {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
   height: 100%;
-  max-width: 400px;
-  margin: 0 auto;
-  padding: 24px;
-  min-height: calc(100vh - 120px);
+  width: 100%;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+.header-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  color: white;
 }
 
 .form-content {
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 24px;
-  overflow-y: auto;
-  margin-bottom: 24px;
+  max-width: 420px;
+  margin: 0 auto;
+  width: 100%;
+  padding-bottom: 120px; /* 为底部按钮留出空间 */
 }
 
 .bottom-section {
-  flex-shrink: 0;
-  padding-top: 16px;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px 20px 24px;
+  background: linear-gradient(180deg, transparent 0%, #0F172A 20%, #0F172A 100%);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  z-index: 10;
+  min-height: 80px;
 }
 
 .selected-chain {
@@ -461,7 +498,7 @@ onMounted(() => {
 
 .import-btn {
   width: 100%;
-  padding: 16px 24px;
+  padding: 18px 24px;
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   border: none;
   border-radius: 12px;
@@ -470,6 +507,7 @@ onMounted(() => {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -537,14 +575,9 @@ onMounted(() => {
 
 // 响应式设计
 @media (max-width: 480px) {
-  .import-private-key-container {
-    padding: 20px;
-    min-height: calc(100vh - 100px);
-  }
-
   .form-content {
     gap: 20px;
-    margin-bottom: 20px;
+    padding-bottom: 100px;
   }
 
   .bottom-section {
@@ -557,25 +590,7 @@ onMounted(() => {
   }
 }
 
-// 弹窗模式特殊样式
-:global(.layout-popup) .import-private-key-container {
-  min-height: calc(600px - 120px);
-  padding: 20px;
 
-  .form-content {
-    gap: 18px;
-    margin-bottom: 16px;
-  }
-
-  .bottom-section {
-    padding-top: 12px;
-  }
-
-  .import-btn {
-    padding: 14px 20px;
-    font-size: 15px;
-  }
-}
 
 @keyframes spin {
   from { transform: rotate(0deg); }
