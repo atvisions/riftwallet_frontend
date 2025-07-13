@@ -172,7 +172,7 @@ const createWallet = async () => {
       }
 
       // 先清除当前钱包，避免 loadWallets 恢复旧钱包
-      walletStore.currentWallet = null
+      // 注意：不能直接赋值，应该通过 store 方法处理
 
       // 重新加载钱包列表以获取最新数据（禁用自动选择钱包）
       console.log('🔄 Reloading wallet list...')
@@ -221,14 +221,26 @@ const createWallet = async () => {
       console.log('🏠 Current wallet before loading balance:', walletStore.currentWallet)
 
       // 等待余额数据加载完成
-      if (walletStore.currentWallet) {
+      if (walletStore.currentWallet && typeof walletStore.currentWallet.id === 'number') {
         console.log('⏳ Loading wallet balance before redirect...')
         await walletStore.loadWalletBalance(walletStore.currentWallet.id)
         console.log('✅ Wallet balance loaded, redirecting to home')
       }
 
       // 跳转到首页
-      router.push('/')
+      console.log('🏠 准备跳转到首页')
+      console.log('🔐 跳转前的认证状态:', {
+        isAuthenticated: authStore.isAuthenticated,
+        hasPaymentPassword: authStore.hasPaymentPassword,
+        isPasswordSessionValid: authStore.isPasswordSessionValid
+      })
+      console.log('📱 跳转前的钱包状态:', {
+        walletsCount: walletStore.wallets.length,
+        currentWallet: walletStore.currentWallet?.id
+      })
+
+      await router.push('/')
+      console.log('✅ 路由跳转完成，当前路径:', router.currentRoute.value.path)
     } else {
       throw new Error(data.message || 'Failed to create wallet')
     }
@@ -311,59 +323,19 @@ onMounted(() => {
   flex-direction: column;
   gap: 24px;
 }
-.create-wallet-password-page {
-  width: 375px;
-  height: 600px; // 固定高度，适应插件环境
-  background: #0F172A;
-  color: #f1f5f9;
-  display: flex;
-  flex-direction: column;
-}
+/* 移除旧的页面容器样式，使用 ResponsiveLayout */
 
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid #334155;
-  
-  .back-btn {
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 10px;
-    color: #f1f5f9;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    
-    &:hover {
-      background: rgba(255, 255, 255, 0.15);
-    }
-  }
-  
-  h1 {
-    font-size: 18px;
-    font-weight: 600;
-    margin: 0;
-  }
-  
-  .placeholder {
-    width: 40px;
-  }
-}
+/* 移除旧的 .header 样式，使用 ResponsiveLayout 的头部 */
 
-.content {
-  flex: 1;
-  padding: 24px 20px;
-  overflow-y: auto;
-  
+/* 移除冲突的 .content 样式，使用 ResponsiveLayout 的滚动管理 */
+
+.page-content {
+  /* 让内容自然流动，不设置滚动 */
+
   .description {
     text-align: center;
     margin-bottom: 32px;
-    
+
     h2 {
       font-size: 24px;
       font-weight: 700;

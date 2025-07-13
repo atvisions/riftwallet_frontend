@@ -171,8 +171,12 @@ watch(() => router.currentRoute.value.path, async (newPath, oldPath) => {
   }
 
   // 如果跳转到首页且已经初始化过，检查是否需要重新验证
-  if (newPath === '/' && isInitialized.value) {
-    // 给一个短暂的延迟，让密码验证的状态更新完成
+  // 但是要排除从密码验证页面和钱包选择页面跳转过来的情况，避免重复验证
+  if (newPath === '/' && isInitialized.value &&
+      oldPath !== '/verify-password' &&
+      oldPath !== '/wallet-choice' &&
+      oldPath !== '/create-wallet-password') {
+    // 给一个较长的延迟，确保密码验证的状态更新完成
     setTimeout(async () => {
       // 重新检查会话状态
       await authStore.checkPasswordSession()
@@ -182,7 +186,7 @@ watch(() => router.currentRoute.value.path, async (newPath, oldPath) => {
         console.log('Session expired after delay check, redirecting to verify password')
         router.push('/verify-password')
       }
-    }, 100) // 100ms 延迟
+    }, 500) // 增加延迟到500ms，确保状态更新完成
   }
 })
 

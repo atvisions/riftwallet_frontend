@@ -60,9 +60,7 @@ const props = withDefaults(defineProps<Props>(), {
   scrollable: true
 })
 
-const emit = defineEmits<{
-  back: []
-}>()
+
 
 // 检测当前环境
 const currentMode = ref<'popup' | 'sidepanel'>('popup')
@@ -151,17 +149,18 @@ onUnmounted(() => {
   max-height: 600px;
   width: 375px;
   max-width: 375px;
-  overflow: hidden;
+  overflow: hidden; /* 保持外层容器不滚动，让内部 main-content 处理滚动 */
 }
 
 /* Side Panel 模式样式 */
 .layout-sidepanel {
-  min-height: 100vh;
-  height: 100vh;
-  width: 100vw;
-  max-width: 100vw;
+  min-height: 100%;
+  height: 100%;
+  width: 100%;
+  max-width: 100%;
   margin: 0;
   overflow: hidden;
+  position: relative;
 }
 
 /* 头部样式 */
@@ -234,19 +233,37 @@ onUnmounted(() => {
 }
 
 .main-with-header.main-with-footer {
-  height: calc(100% - 120px);
+  flex: 1;
+  min-height: 0;
+  /* 在 popup 模式下使用固定高度计算 */
 }
 
 .main-with-header:not(.main-with-footer) {
-  height: calc(100% - 60px);
+  flex: 1;
+  min-height: 0;
+  /* 在 popup 模式下使用固定高度计算 */
 }
 
+/* Popup 模式下的固定高度 */
+.layout-popup .main-with-header:not(.main-with-footer) {
+  height: calc(100% - 60px);
+  flex: none;
+}
+
+.layout-popup .main-with-header.main-with-footer {
+  height: calc(100% - 120px);
+  flex: none;
+}
+
+/* Sidepanel 模式下使用 flex 布局 */
 .layout-sidepanel .main-with-header:not(.main-with-footer) {
-  height: calc(100vh - 64px);
+  flex: 1;
+  min-height: 0;
 }
 
 .layout-sidepanel .main-with-header.main-with-footer {
-  height: calc(100vh - 124px);
+  flex: 1;
+  min-height: 0;
 }
 
 .main-content {
@@ -254,21 +271,21 @@ onUnmounted(() => {
   overflow-y: auto;
   overflow-x: hidden;
   width: 100%;
-  max-width: 400px;
-  margin: 0 auto;
-  height: 100%;
+  min-height: 0; /* 确保 flex 子元素可以收缩 */
+  /* 移除 max-width 和 margin，让内容占满整个宽度 */
 }
 
 .layout-popup .main-content {
-  max-width: none;
-  margin: 0;
+  overflow-y: auto; /* 确保在 popup 模式下能够滚动 */
+  height: 100%; /* 确保占满可用高度 */
 }
 
-.layout-sidepanel .main-content {
-  max-width: none;
-  margin: 0;
-  height: 100%;
+/* 有底部按钮时，为内容添加底部间距 */
+.main-with-footer .main-content {
+  padding-bottom: 80px; /* 为底部按钮留出空间 */
 }
+
+
 
 .layout-scrollable .main-content {
   overflow-y: auto;
@@ -282,10 +299,6 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 0;
-}
-
-.layout-sidepanel .layout-footer {
   padding: 0;
   position: absolute;
   bottom: 0;

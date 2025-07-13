@@ -163,8 +163,7 @@ const swapTokens = () => {
 
 .trade-content {
   padding: 12px;
-  height: 100%;
-  overflow-y: auto;
+  /* 移除 height: 100% 和 overflow-y: auto，让 ResponsiveLayout 处理滚动 */
   display: flex;
   flex-direction: column;
 }

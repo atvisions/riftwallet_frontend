@@ -161,7 +161,7 @@ const walletStore = useWalletStore()
 const authStore = useAuthStore()
 
 // 响应式数据
-const loading = ref(false)
+const loading = ref(true) // 初始状态为加载中，避免内容闪烁
 const isManualRefreshing = ref(false)
 const activeTab = ref<'tokens' | 'nfts'>('tokens')
 // 移除了不再需要的 isSidePanelMode 状态
@@ -190,7 +190,7 @@ const totalChangePercentage = computed(() => {
 // 移除了不再需要的侧边栏模式图标计算属性
 
 // 方法
-const formatTokenAmount = (balance: string, decimals: number) => {
+const formatTokenAmount = (balance: string, _decimals: number) => {
   const num = parseFloat(balance)
   if (num === 0) return '0'
   if (num < 0.01) return '<0.01'
@@ -225,7 +225,7 @@ const handleImageError = (event: Event, token: WalletToken) => {
   token.imageError = true
 }
 
-const handleImageLoad = (event: Event, token: WalletToken) => {
+const handleImageLoad = (_event: Event, token: WalletToken) => {
   console.log('Image loaded for token:', token.symbol)
   token.imageError = false
 }
@@ -305,8 +305,9 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  height: 100%;
-  overflow-y: auto;
+  flex: 1;
+  min-height: 0; /* 确保 flex 子元素可以收缩 */
+  /* 移除 height: 100% 和 overflow-y: auto，让 ResponsiveLayout 处理滚动 */
 }
 
 /* 余额卡片 - 统一样式 */
@@ -419,9 +420,9 @@ onMounted(async () => {
 
 /* 代币部分 */
 .tokens-section {
-  flex: 1;
   display: flex;
   flex-direction: column;
+  /* 移除 flex: 1，让内容自然流动，由整个页面滚动处理 */
 }
 
 .section-header {
@@ -468,6 +469,7 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  /* 让内容自然流动，不设置固定高度或滚动 */
 }
 
 .token-item {
@@ -569,6 +571,7 @@ onMounted(async () => {
   padding: 48px 24px;
   color: rgba(255, 255, 255, 0.5);
   text-align: center;
+  min-height: 200px; /* 确保加载和空状态有固定高度，避免布局跳动 */
 }
 
 .loading-state i,

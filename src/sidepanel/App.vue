@@ -163,9 +163,9 @@ onMounted(async () => {
 
 /* 确保内容区域能够正确滚动 */
 :deep(.main-content) {
-  height: calc(100vh - 120px);
-  overflow-y: auto;
+  /* 移除固定高度，让 ResponsiveLayout 处理 */
   width: 100%;
+  /* overflow-y: auto 由 ResponsiveLayout 处理 */
 }
 
 /* 底部导航样式调整 */
@@ -181,8 +181,8 @@ onMounted(async () => {
 
 /* 代币列表高度调整 */
 :deep(.token-list) {
-  height: calc(100vh - 300px) !important;
-  min-height: 300px;
+  /* 移除强制高度设置，使用组件自身的 min-height */
+  min-height: 200px; /* 与 HomeSidePanel 保持一致 */
 }
 
 /* 通用页面容器样式 */

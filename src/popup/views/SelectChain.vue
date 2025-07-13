@@ -101,7 +101,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@shared/stores/auth'
-import { useWalletStore } from '@shared/stores/wallet'
 import { APP_CONFIG } from '@shared/constants'
 import ResponsiveLayout from '@/popup/components/ResponsiveLayout.vue'
 

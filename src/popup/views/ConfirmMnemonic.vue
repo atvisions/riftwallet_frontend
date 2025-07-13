@@ -182,6 +182,7 @@ const pasteMnemonic = async () => {
 
     // 使用现代剪贴板 API
     const text = await navigator.clipboard.readText()
+    console.log('Clipboard content:', text)
     processPastedText(text)
 
   } catch (err: any) {
@@ -189,11 +190,11 @@ const pasteMnemonic = async () => {
     if (err.name === 'NotAllowedError') {
       error.value = 'Clipboard access denied. Please allow clipboard permissions or type manually.'
     } else if (err.name === 'NotFoundError') {
-      error.value = 'No text found in clipboard. Please copy your seed phrase first.'
+      error.value = 'No text found in clipboard. Please go back to the previous page and copy your seed phrase first.'
     } else if (err.name === 'SecurityError') {
       error.value = 'Clipboard access blocked by security policy. Please type your seed phrase manually.'
     } else {
-      error.value = 'Failed to read from clipboard. Please type your seed phrase manually.'
+      error.value = 'Failed to read from clipboard. Please go back and copy your seed phrase, or type manually.'
     }
   } finally {
     // 清除加载状态
@@ -204,19 +205,24 @@ const pasteMnemonic = async () => {
 // 处理粘贴的文本
 const processPastedText = (text: string) => {
   if (!text || !text.trim()) {
-    error.value = 'No text found in clipboard. Please copy your seed phrase first.'
+    error.value = 'No text found in clipboard. Please go back to the previous page and copy your seed phrase first.'
     return
   }
 
   const words = text.trim().split(/\s+/).filter(word => word.length > 0)
 
+  console.log('Pasted text:', text)
+  console.log('Parsed words:', words)
+
   if (words.length === 12) {
     inputWords.value = words.map(word => word.toLowerCase().trim())
     validateInput()
+    // 清除错误信息
+    error.value = ''
     // 成功提示
     setTimeout(() => {
       if (!error.value) {
-        // 可以添加成功提示，但这里我们保持简洁
+        console.log('Successfully pasted 12 words')
       }
     }, 100)
   } else if (words.length > 12) {

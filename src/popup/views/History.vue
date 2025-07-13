@@ -78,78 +78,42 @@ import ResponsiveLayout from '@/popup/components/ResponsiveLayout.vue'
 
 // 主要内容容器
 .page-content {
-  padding: 16px;
   max-width: 420px;
   margin: 0 auto;
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: 20px;
+  flex: 1;
+  // ResponsiveLayout 已经提供了 padding，不需要重复设置
 }
-
-// 弹窗模式下的特殊样式
-:global(.layout-popup) .page-content {
-  padding: 16px !important;
-}
-
-// 侧边栏模式下的特殊样式
-:global(.layout-sidepanel) .page-content {
-  padding: 16px !important;
-}
-.history-page {
-  width: 375px;
-  height: 600px; // 固定高度，适应插件环境
-  background: #0F172A;
-  color: #f1f5f9;
-}
-
-.header {
-  display: flex;
-  align-items: center;
-  padding: 16px;
-  border-bottom: 1px solid #1E293B;
-  
-  .back-btn {
-    background: none;
-    border: none;
-    color: #6366f1;
-    font-size: 20px;
-    margin-right: 16px;
-    cursor: pointer;
-  }
-  
-  h1 {
-    font-size: 18px;
-    font-weight: 600;
-    margin: 0;
-  }
-}
-
-.content {
-  padding: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: calc(100% - 80px);
-}
+// Coming Soon 组件样式
 
 .coming-soon {
   text-align: center;
-  
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 300px;
+
   i {
     font-size: 64px;
     color: #6366f1;
     margin-bottom: 16px;
   }
-  
+
   h2 {
     font-size: 24px;
     margin: 0 0 8px 0;
+    color: #f1f5f9;
   }
-  
+
   p {
     color: #9ca3af;
     margin: 0;
+    font-size: 16px;
   }
 }
 </style>
