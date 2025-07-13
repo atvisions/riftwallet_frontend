@@ -1,20 +1,31 @@
 <template>
-  <PageContainer
+  <ResponsiveLayout
     title="Create Wallet"
     :show-header="true"
     :show-footer="true"
-    :show-back-button="true"
-    :custom-back-action="goBack"
-    max-width="420px"
-    padding="24px"
-    :centered="true"
+    :scrollable="true"
+    @back="goBack"
   >
-    <div class="description">
-      <h2>Enter Your Password</h2>
-      <p>Enter your payment password to create the wallet with the verified seed phrase.</p>
-    </div>
+    <!-- 自定义头部 -->
+    <template #header>
+      <div class="page-header">
+        <div class="header-left">
+          <button @click="goBack" class="back-button">
+            <i class="ri-arrow-left-line"></i>
+          </button>
+          <h1 class="header-title">Create Wallet</h1>
+        </div>
+      </div>
+    </template>
 
-    <div class="password-section">
+    <!-- 主要内容 -->
+    <div class="page-content">
+      <div class="description">
+        <h2>Enter Your Password</h2>
+        <p>Enter your payment password to create the wallet with the verified seed phrase.</p>
+      </div>
+
+      <div class="password-section">
       <div class="input-group">
         <label for="password">Payment Password</label>
         <div class="input-wrapper">
@@ -40,11 +51,12 @@
           {{ passwordError }}
         </div>
       </div>
-    </div>
 
-    <div class="error-message" v-if="error">
-      <i class="ri-error-warning-line"></i>
-      {{ error }}
+      <div class="error-message" v-if="error">
+        <i class="ri-error-warning-line"></i>
+        {{ error }}
+      </div>
+      </div>
     </div>
 
     <template #footer>
@@ -65,7 +77,7 @@
         </button>
       </div>
     </template>
-  </PageContainer>
+  </ResponsiveLayout>
 </template>
 
 <script setup lang="ts">
@@ -74,7 +86,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@shared/stores/auth'
 import { useWalletStore } from '@shared/stores/wallet'
 import { APP_CONFIG } from '@shared/constants'
-import PageContainer from '@/popup/components/PageContainer.vue'
+import ResponsiveLayout from '@/popup/components/ResponsiveLayout.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -248,6 +260,57 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+// 自定义头部样式
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  width: 100%;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateX(-2px);
+  }
+}
+
+.header-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  color: white;
+}
+
+// 主要内容容器
+.page-content {
+  padding: 24px;
+  max-width: 420px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
 .create-wallet-password-page {
   width: 375px;
   height: 600px; // 固定高度，适应插件环境

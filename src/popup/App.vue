@@ -1,5 +1,5 @@
 <template>
-  <div id="app" class="wallet-app">
+  <div id="app" class="wallet-app" :class="layoutClasses">
     <!-- 加载状态 -->
     <div v-if="authStore.loading || !isInitialized" class="loading-screen">
       <div class="loading-content">
@@ -15,7 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, watch, ref } from 'vue'
+import { onMounted, onUnmounted, watch, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useWalletStore } from '@shared/stores/wallet'
 import { useAuthStore } from '@shared/stores/auth'
@@ -28,8 +28,46 @@ const authStore = useAuthStore()
 // 初始化状态
 const isInitialized = ref(false)
 
+// 全局布局模式检测
+const currentMode = ref<'popup' | 'sidepanel'>('popup')
+
+const detectMode = () => {
+  // 检测是否在 Side Panel 中
+  const isInSidePanel = window.location.href.includes('sidepanel') ||
+                       window.location.pathname.includes('sidepanel') ||
+                       (window.innerWidth > 500 && window.innerHeight > 700) // 更严格的尺寸检测
+
+  currentMode.value = isInSidePanel ? 'sidepanel' : 'popup'
+  console.log('🔍 Global Mode detected:', currentMode.value, {
+    href: window.location.href,
+    pathname: window.location.pathname,
+    width: window.innerWidth,
+    height: window.innerHeight
+  })
+}
+
+// 布局类名
+const layoutClasses = computed(() => {
+  const classes = {
+    'layout-popup': currentMode.value === 'popup',
+    'layout-sidepanel': currentMode.value === 'sidepanel'
+  }
+  console.log('🎯 Global App - layoutClasses:', {
+    currentMode: currentMode.value,
+    classes,
+    windowWidth: window.innerWidth,
+    windowHeight: window.innerHeight
+  })
+  return classes
+})
+
 onMounted(async () => {
   try {
+    // 初始化布局模式检测
+    console.log('🎯 Initializing global layout mode detection')
+    detectMode()
+    window.addEventListener('resize', detectMode)
+
     // 防止重复初始化
     if (isInitialized.value) {
       console.log('App already initialized, skipping')
@@ -138,23 +176,39 @@ watch(() => router.currentRoute.value.path, async (newPath, oldPath) => {
 // 组件卸载时清理
 onUnmounted(() => {
   stopSessionCheck()
+  window.removeEventListener('resize', detectMode)
 })
 </script>
 
 <style lang="scss">
 .wallet-app {
-  width: 375px !important;
-  height: 600px !important; // 固定高度，适应插件环境
   background: #0F172A !important;
   color: #f1f5f9;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overflow: hidden !important;
-  min-width: 375px !important;
-  max-width: 375px !important;
-  min-height: 600px !important;
-  max-height: 600px !important;
   position: relative !important;
   display: block !important;
+
+  // Popup 模式样式
+  &.layout-popup {
+    width: 375px !important;
+    height: 600px !important;
+    min-width: 375px !important;
+    max-width: 375px !important;
+    min-height: 600px !important;
+    max-height: 600px !important;
+  }
+
+  // Side Panel 模式样式
+  &.layout-sidepanel {
+    width: 100vw !important;
+    height: 100vh !important;
+    min-width: 100vw !important;
+    max-width: 100vw !important;
+    min-height: 100vh !important;
+    max-height: 100vh !important;
+    margin: 0 !important;
+  }
 }
 
 // 加载屏幕

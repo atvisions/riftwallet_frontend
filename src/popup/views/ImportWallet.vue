@@ -1,88 +1,101 @@
 <template>
-  <PageContainer
+  <ResponsiveLayout
     title="Import Wallet"
     :show-header="true"
     :show-footer="false"
     :show-back-button="true"
-    :custom-back-action="() => $router.go(-1)"
-    max-width="420px"
-    padding="24px"
-    :centered="true"
+    :scrollable="true"
+    @back="$router.go(-1)"
   >
-    <!-- 头部说明 -->
-    <div class="import-header">
-      <div class="import-icon">
-        <i class="ri-download-cloud-line"></i>
+    <!-- 自定义头部 -->
+    <template #header>
+      <div class="import-header-bar">
+        <div class="header-left">
+          <button @click="$router.go(-1)" class="back-button">
+            <i class="ri-arrow-left-line"></i>
+          </button>
+          <h1 class="header-title">Import Wallet</h1>
+        </div>
       </div>
-      <h2>Import Your Wallet</h2>
-      <p>Choose your preferred import method to restore your existing wallet</p>
-    </div>
+    </template>
 
-    <!-- 导入选项 -->
-    <div class="import-options">
-        <!-- Import Recovery Phrase -->
-        <div class="option-card mnemonic-card" @click="importMnemonic">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div class="option-icon">
-              <i class="ri-file-text-line"></i>
-              <div class="icon-glow"></div>
-            </div>
-            <div class="option-info">
-              <h3>Recovery Phrase</h3>
-              <p>12-24 word seed phrase</p>
-              <div class="feature-tags">
-                <span class="tag">Multi-Chain</span>
-                <span class="tag popular">Popular</span>
+    <!-- 主要内容 -->
+    <div class="import-content">
+      <!-- 头部说明 -->
+      <div class="import-header">
+        <div class="import-icon">
+          <i class="ri-download-cloud-line"></i>
+        </div>
+        <h2>Import Your Wallet</h2>
+        <p>Choose your preferred import method to restore your existing wallet</p>
+      </div>
+
+      <!-- 导入选项 -->
+      <div class="import-options">
+          <!-- Import Recovery Phrase -->
+          <div class="option-card mnemonic-card" @click="importMnemonic">
+            <div class="card-background"></div>
+            <div class="card-content">
+              <div class="option-icon">
+                <i class="ri-file-text-line"></i>
+                <div class="icon-glow"></div>
+              </div>
+              <div class="option-info">
+                <h3>Recovery Phrase</h3>
+                <p>12-24 word seed phrase</p>
+                <div class="feature-tags">
+                  <span class="tag">Multi-Chain</span>
+                  <span class="tag popular">Popular</span>
+                </div>
               </div>
             </div>
+            <div class="card-decoration">
+              <div class="decoration-circle"></div>
+              <div class="decoration-line"></div>
+            </div>
           </div>
-          <div class="card-decoration">
-            <div class="decoration-circle"></div>
-            <div class="decoration-line"></div>
+
+          <!-- Import Private Key -->
+          <div class="option-card private-key-card" @click="importPrivateKey">
+            <div class="card-background"></div>
+            <div class="card-content">
+              <div class="option-icon">
+                <i class="ri-key-line"></i>
+                <div class="icon-glow"></div>
+              </div>
+              <div class="option-info">
+                <h3>Private Key</h3>
+                <p>Single account import</p>
+                <div class="feature-tags">
+                  <span class="tag">Quick</span>
+                  <span class="tag">Secure</span>
+                </div>
+              </div>
+            </div>
+            <div class="card-decoration">
+              <div class="decoration-circle"></div>
+              <div class="decoration-line"></div>
+            </div>
           </div>
         </div>
 
-        <!-- Import Private Key -->
-        <div class="option-card private-key-card" @click="importPrivateKey">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div class="option-icon">
-              <i class="ri-key-line"></i>
-              <div class="icon-glow"></div>
-            </div>
-            <div class="option-info">
-              <h3>Private Key</h3>
-              <p>Single account import</p>
-              <div class="feature-tags">
-                <span class="tag">Quick</span>
-                <span class="tag">Secure</span>
-              </div>
-            </div>
-          </div>
-          <div class="card-decoration">
-            <div class="decoration-circle"></div>
-            <div class="decoration-line"></div>
-          </div>
+      <!-- 安全提示 -->
+      <div class="security-warning">
+        <div class="warning-icon">
+          <i class="ri-shield-check-line"></i>
+        </div>
+        <div class="warning-content">
+          <h4>Security Reminder</h4>
+          <p>Never share your recovery phrase or private key with anyone. Riftwallet will never ask for this information.</p>
         </div>
       </div>
-
-    <!-- 安全提示 -->
-    <div class="security-warning">
-      <div class="warning-icon">
-        <i class="ri-shield-check-line"></i>
-      </div>
-      <div class="warning-content">
-        <h4>Security Reminder</h4>
-        <p>Never share your recovery phrase or private key with anyone. Riftwallet will never ask for this information.</p>
-      </div>
     </div>
-  </PageContainer>
+  </ResponsiveLayout>
 </template>
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import PageContainer from '../components/PageContainer.vue'
+import ResponsiveLayout from '../components/ResponsiveLayout.vue'
 
 const router = useRouter()
 
@@ -102,13 +115,56 @@ const importPrivateKey = () => {
 </script>
 
 <style lang="scss" scoped>
-.import-wallet-container {
+// 自定义头部样式
+.import-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  width: 100%;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateX(-2px);
+  }
+}
+
+.header-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  color: white;
+}
+
+// 主要内容容器
+.import-content {
   padding: 24px;
-  max-width: 400px;
+  max-width: 420px;
   margin: 0 auto;
-  min-height: calc(100vh - 120px);
+  width: 100%;
   display: flex;
   flex-direction: column;
+  gap: 32px;
 }
 
 .import-header {
@@ -537,10 +593,11 @@ const importPrivateKey = () => {
   }
 }
 
-// 弹窗模式特殊样式
-:global(.layout-popup) .import-wallet-container {
-  min-height: calc(600px - 120px);
-  padding: 20px;
+// 响应式布局调整
+@media (max-width: 400px) {
+  .import-content {
+    padding: 20px;
+  }
 
   .import-header {
     margin-bottom: 24px;

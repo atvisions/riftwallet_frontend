@@ -1,14 +1,25 @@
 <template>
-  <PageContainer
+  <ResponsiveLayout
     title="Select Blockchain"
     :show-header="true"
     :show-footer="true"
-    :show-back-button="true"
-    :custom-back-action="goBack"
-    max-width="420px"
-    padding="24px"
-    :centered="true"
+    :scrollable="true"
+    @back="goBack"
   >
+    <!-- 自定义头部 -->
+    <template #header>
+      <div class="chain-select-header">
+        <div class="header-left">
+          <button @click="goBack" class="back-button">
+            <i class="ri-arrow-left-line"></i>
+          </button>
+          <h1 class="header-title">Select Blockchain</h1>
+        </div>
+      </div>
+    </template>
+
+    <!-- 主要内容 -->
+    <div class="chain-select-content">
       <div class="description">
         <p>{{ descriptionText }}</p>
       </div>
@@ -59,19 +70,22 @@
       <span>{{ error }}</span>
     </div>
 
+    </div>
+
+    <!-- 底部按钮 -->
     <template #footer>
-      <div class="bottom-actions">
+      <div class="footer-actions">
         <button
           class="continue-btn"
           :disabled="!selectedChain || submitting"
-          @click="continueToPrivateKey"
+          @click="handleContinue"
         >
           <i v-if="submitting" class="ri-loader-4-line spinning"></i>
           <span>{{ submitting ? 'Processing...' : 'Continue' }}</span>
         </button>
       </div>
     </template>
-  </PageContainer>
+  </ResponsiveLayout>
 </template>
 
 <script setup lang="ts">
@@ -79,7 +93,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@shared/stores/auth'
 import { APP_CONFIG } from '@shared/constants'
-import PageContainer from '@/popup/components/PageContainer.vue'
+import ResponsiveLayout from '@/popup/components/ResponsiveLayout.vue'
 
 interface SupportedChain {
   chain: string
@@ -179,14 +193,56 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.select-chain-page {
+// 自定义头部样式
+.chain-select-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
   width: 100%;
-  min-height: 100vh;
-  background: #0F172A;
-  color: #f1f5f9;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateX(-2px);
+  }
+}
+
+.header-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  color: white;
+}
+
+// 主要内容容器
+.chain-select-content {
+  padding: 24px;
+  max-width: 420px;
+  margin: 0 auto;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  position: relative;
+  gap: 24px;
 }
 
 .header {

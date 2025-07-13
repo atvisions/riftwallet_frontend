@@ -1,21 +1,32 @@
 <template>
-  <PageContainer
+  <ResponsiveLayout
     title="Confirm Seed Phrase"
     :show-header="true"
     :show-footer="true"
-    :show-back-button="true"
-    :custom-back-action="goBack"
-    max-width="480px"
-    padding="20px"
-    :centered="true"
+    :scrollable="true"
+    @back="goBack"
   >
-    <div class="confirm-container">
-      <div class="header-section">
-        <h2>Verify Recovery Phrase</h2>
-        <p>Enter your 12-word recovery phrase to confirm you've saved it correctly.</p>
+    <!-- 自定义头部 -->
+    <template #header>
+      <div class="page-header">
+        <div class="header-left">
+          <button @click="goBack" class="back-button">
+            <i class="ri-arrow-left-line"></i>
+          </button>
+          <h1 class="header-title">Confirm Seed Phrase</h1>
+        </div>
       </div>
+    </template>
 
-      <div class="input-section">
+    <!-- 主要内容 -->
+    <div class="page-content">
+      <div class="confirm-container">
+        <div class="header-section">
+          <h2>Verify Recovery Phrase</h2>
+          <p>Enter your 12-word recovery phrase to confirm you've saved it correctly.</p>
+        </div>
+
+        <div class="input-section">
         <div class="word-grid">
           <div
             v-for="(word, index) in inputWords"
@@ -46,30 +57,31 @@
             <span>Clear All</span>
           </button>
         </div>
-      </div>
-    </div>
+        </div>
 
-    <div class="password-section">
-      <h3>Verify Your Password</h3>
-      <p>Enter your wallet password to create the wallet</p>
+        <div class="password-section">
+          <h3>Verify Your Password</h3>
+          <p>Enter your wallet password to create the wallet</p>
 
-      <div class="password-inputs">
-        <div class="input-group">
-          <label>Password</label>
-          <input
-            v-model="password"
-            type="password"
-            placeholder="Enter your wallet password"
-            class="password-input"
-            @input="validatePassword"
-          />
+          <div class="password-inputs">
+            <div class="input-group">
+              <label>Password</label>
+              <input
+                v-model="password"
+                type="password"
+                placeholder="Enter your wallet password"
+                class="password-input"
+                @input="validatePassword"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="error-message" v-if="error">
+          <i class="ri-error-warning-line"></i>
+          {{ error }}
         </div>
       </div>
-    </div>
-
-    <div class="error-message" v-if="error">
-      <i class="ri-error-warning-line"></i>
-      {{ error }}
     </div>
 
     <template #footer>
@@ -85,7 +97,7 @@
         </button>
       </div>
     </template>
-  </PageContainer>
+  </ResponsiveLayout>
 </template>
 
 <script setup lang="ts">
@@ -94,7 +106,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@shared/stores/auth'
 import { useWalletStore } from '@shared/stores/wallet'
 import { APP_CONFIG } from '@shared/constants'
-import PageContainer from '@/popup/components/PageContainer.vue'
+import ResponsiveLayout from '@/popup/components/ResponsiveLayout.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -325,6 +337,57 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+// 自定义头部样式
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  width: 100%;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateX(-2px);
+  }
+}
+
+.header-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  color: white;
+}
+
+// 主要内容容器
+.page-content {
+  padding: 24px;
+  max-width: 420px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
 .confirm-container {
   display: flex;
   flex-direction: column;

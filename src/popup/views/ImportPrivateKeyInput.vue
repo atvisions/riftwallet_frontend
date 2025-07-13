@@ -1,14 +1,25 @@
 <template>
-  <PageContainer
+  <ResponsiveLayout
     title="Import Private Key"
     :show-header="true"
     :show-footer="true"
-    :show-back-button="true"
-    :custom-back-action="goBack"
-    max-width="420px"
-    padding="24px"
-    :centered="true"
+    :scrollable="true"
+    @back="goBack"
   >
+    <!-- 自定义头部 -->
+    <template #header>
+      <div class="import-key-header">
+        <div class="header-left">
+          <button @click="goBack" class="back-button">
+            <i class="ri-arrow-left-line"></i>
+          </button>
+          <h1 class="header-title">Import Private Key</h1>
+        </div>
+      </div>
+    </template>
+
+    <!-- 主要内容 -->
+    <div class="import-key-content">
       <div class="form-content">
         <!-- Selected Chain Display -->
         <div class="selected-chain" v-if="selectedChain">
@@ -82,12 +93,13 @@
           </div>
           <div v-if="passwordError" class="error-message">{{ passwordError }}</div>
         </div>
-      </div>
 
-    <!-- Error Alert -->
-    <div v-if="error" class="error-alert">
-      <i class="ri-error-warning-line"></i>
-      <span>{{ error }}</span>
+        <!-- Error Alert -->
+        <div v-if="error" class="error-alert">
+          <i class="ri-error-warning-line"></i>
+          <span>{{ error }}</span>
+        </div>
+      </div>
     </div>
 
     <template #footer>
@@ -103,14 +115,14 @@
         </button>
       </div>
     </template>
-  </PageContainer>
+  </ResponsiveLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useWalletStore } from '@shared/stores/wallet'
-import PageContainer from '@/popup/components/PageContainer.vue'
+import ResponsiveLayout from '@/popup/components/ResponsiveLayout.vue'
 
 interface SupportedChain {
   chain: string

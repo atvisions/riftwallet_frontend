@@ -1,14 +1,25 @@
 <template>
-  <PageContainer
+  <ResponsiveLayout
     title="Send"
     :show-header="true"
-    :show-footer="false"
-    :show-back-button="true"
-    :custom-back-action="() => $router.go(-1)"
-    max-width="420px"
-    padding="0"
-    :centered="true"
+    :show-footer="true"
+    :scrollable="true"
+    @back="$router.go(-1)"
   >
+    <!-- 自定义头部 -->
+    <template #header>
+      <div class="page-header">
+        <div class="header-left">
+          <button @click="$router.go(-1)" class="back-button">
+            <i class="ri-arrow-left-line"></i>
+          </button>
+          <h1 class="header-title">Send</h1>
+        </div>
+      </div>
+    </template>
+
+    <!-- 主要内容 -->
+    <div class="page-content">
       <div class="form-section">
         <label>To Address</label>
         <input 
@@ -42,13 +53,14 @@
       <button @click="handleSend" :disabled="!canSend" class="send-btn">
         Send Transaction
       </button>
-  </PageContainer>
+    </div>
+  </ResponsiveLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useWalletStore } from '@shared/stores/wallet'
-import PageContainer from '@/popup/components/PageContainer.vue'
+import ResponsiveLayout from '@/popup/components/ResponsiveLayout.vue'
 
 const walletStore = useWalletStore()
 
@@ -79,6 +91,57 @@ const handleSend = async () => {
 </script>
 
 <style lang="scss" scoped>
+// 自定义头部样式
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  width: 100%;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateX(-2px);
+  }
+}
+
+.header-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  color: white;
+}
+
+// 主要内容容器
+.page-content {
+  padding: 24px;
+  max-width: 420px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
 .send-page {
   width: 375px;
   height: 600px; // 固定高度，适应插件环境

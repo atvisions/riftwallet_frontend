@@ -1,17 +1,28 @@
 <template>
-  <PageContainer
+  <ResponsiveLayout
     title="Select Blockchain"
     :show-header="true"
     :show-footer="true"
-    :show-back-button="true"
-    :custom-back-action="goBack"
-    max-width="420px"
-    padding="24px"
-    :centered="true"
+    :scrollable="true"
+    @back="goBack"
   >
-    <div class="description">
-      <p>Choose the blockchain network for your new wallet</p>
-    </div>
+    <!-- 自定义头部 -->
+    <template #header>
+      <div class="page-header">
+        <div class="header-left">
+          <button @click="goBack" class="back-button">
+            <i class="ri-arrow-left-line"></i>
+          </button>
+          <h1 class="header-title">Select Blockchain</h1>
+        </div>
+      </div>
+    </template>
+
+    <!-- 主要内容 -->
+    <div class="page-content">
+      <div class="description">
+        <p>Choose the blockchain network for your new wallet</p>
+      </div>
       
       <div class="chains-container" v-if="!loading">
         <div
@@ -62,6 +73,7 @@
           Retry
         </button>
       </div>
+    </div>
 
     <template #footer>
       <div class="footer">
@@ -81,7 +93,7 @@
         </button>
       </div>
     </template>
-  </PageContainer>
+  </ResponsiveLayout>
 </template>
 
 <script setup lang="ts">
@@ -90,7 +102,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@shared/stores/auth'
 import { useWalletStore } from '@shared/stores/wallet'
 import { APP_CONFIG } from '@shared/constants'
-import PageContainer from '@/popup/components/PageContainer.vue'
+import ResponsiveLayout from '@/popup/components/ResponsiveLayout.vue'
 
 interface SupportedChain {
   chain: string
@@ -191,71 +203,158 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.select-chain-page {
-  width: 100%;
-  min-height: 100vh;
-  background: #0F172A;
-  color: #f1f5f9;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
-
-.header {
+// 自定义头部样式
+.page-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid #334155;
-  
-  .back-btn {
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 10px;
-    color: #f1f5f9;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    
-    &:hover {
-      background: rgba(255, 255, 255, 0.15);
-    }
-  }
-  
-  h1 {
-    font-size: 18px;
-    font-weight: 600;
-    margin: 0;
-  }
-  
-  .placeholder {
-    width: 40px;
+  height: 100%;
+  width: 100%;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateX(-2px);
   }
 }
 
-.content {
-  flex: 1;
-  padding: 24px 20px 100px;
-  overflow-y: auto;
+.header-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  color: white;
 }
 
+// 主要内容容器
+.page-content {
+  padding: 24px;
+  max-width: 420px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+// 描述文本
 .description {
   text-align: center;
-  margin-bottom: 24px;
-  
+  margin-bottom: 8px;
+
   p {
     color: #94a3b8;
+    font-size: 14px;
+    line-height: 1.5;
     margin: 0;
   }
 }
-
+// 链容器
 .chains-container {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+// 加载状态
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 16px;
+    color: #6366f1;
+
+    i {
+      font-size: 40px;
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  p {
+    color: #94a3b8;
+    margin: 0;
+    font-size: 14px;
+  }
+}
+
+// 错误状态
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+
+  .error-icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 16px;
+    color: #ef4444;
+
+    i {
+      font-size: 48px;
+    }
+  }
+
+  p {
+    color: #94a3b8;
+    margin: 0 0 20px 0;
+    font-size: 14px;
+  }
+
+  .retry-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 8px;
+    color: #6366f1;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: rgba(99, 102, 241, 0.2);
+      border-color: rgba(99, 102, 241, 0.5);
+    }
+
+    i {
+      font-size: 16px;
+    }
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .chain-card {
@@ -644,13 +743,10 @@ onMounted(() => {
   }
 }
 
-// 弹窗模式特殊样式
-:global(.layout-popup) .select-chain-page {
-  width: 375px;
-  min-height: 600px;
-
-  .content {
-    padding: 20px 16px 100px;
+// 响应式调整
+@media (max-width: 400px) {
+  .page-content {
+    padding: 20px 16px;
   }
 
   .chains-container {
@@ -668,10 +764,6 @@ onMounted(() => {
   .chain-icon {
     width: 44px;
     height: 44px;
-  }
-
-  .footer {
-    width: 375px;
   }
 }
 </style>
