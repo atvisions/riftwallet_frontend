@@ -12,6 +12,21 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../popup/views/WalletDetail.vue')
   },
   {
+    path: '/wallet/:id/rename',
+    name: 'RenameWallet',
+    component: () => import('../popup/views/RenameWallet.vue')
+  },
+  {
+    path: '/wallet/:id/private-key',
+    name: 'ShowPrivateKey',
+    component: () => import('../popup/views/ShowPrivateKey.vue')
+  },
+  {
+    path: '/wallet/:id/delete',
+    name: 'DeleteWallet',
+    component: () => import('../popup/views/DeleteWallet.vue')
+  },
+  {
     path: '/send',
     name: 'Send',
     component: () => import('../popup/views/Send.vue')

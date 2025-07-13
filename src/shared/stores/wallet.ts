@@ -328,22 +328,52 @@ export const useWalletStore = defineStore('wallet', () => {
   }
 
   // 设置当前钱包
-  const setCurrentWallet = async (wallet: Wallet) => {
-    console.log('🔄 Setting current wallet:', wallet.id, wallet.chain, wallet.name)
-    currentWallet.value = wallet
+  const setCurrentWallet = async (wallet: Wallet | null) => {
+    if (wallet) {
+      console.log('🔄 Setting current wallet:', wallet.id, wallet.chain, wallet.name)
+      currentWallet.value = wallet
 
-    // 持久化当前钱包ID到存储
-    try {
-      await sendMessage('SET_CURRENT_WALLET', { walletId: wallet.id })
-      console.log('✅ Current wallet saved to storage:', wallet.id)
-    } catch (err) {
-      console.error('❌ Failed to save current wallet:', err)
+      // 持久化当前钱包ID到存储
+      try {
+        await sendMessage('SET_CURRENT_WALLET', { walletId: wallet.id })
+        console.log('✅ Current wallet saved to storage:', wallet.id)
+      } catch (err) {
+        console.error('❌ Failed to save current wallet:', err)
+      }
+
+      // 如果没有余额数据，加载余额
+      if (!balances.value[wallet.id]) {
+        loadWalletBalance(wallet.id)
+      }
+    } else {
+      currentWallet.value = null
+    }
+  }
+
+  // 更新钱包信息
+  const updateWallet = (updatedWallet: Wallet) => {
+    const index = wallets.value.findIndex(w => w.id === updatedWallet.id)
+    if (index !== -1) {
+      wallets.value[index] = updatedWallet
+
+      // 如果更新的是当前钱包，也更新当前钱包引用
+      if (currentWallet.value?.id === updatedWallet.id) {
+        currentWallet.value = updatedWallet
+      }
+    }
+  }
+
+  // 从本地状态中移除钱包
+  const removeWallet = (walletId: number) => {
+    wallets.value = wallets.value.filter(w => w.id !== walletId)
+
+    // 如果删除的是当前钱包，切换到第一个钱包或设为null
+    if (currentWallet.value?.id === walletId) {
+      currentWallet.value = wallets.value.length > 0 ? wallets.value[0] : null
     }
 
-    // 如果没有余额数据，加载余额
-    if (!balances.value[wallet.id]) {
-      loadWalletBalance(wallet.id)
-    }
+    // 清除余额数据
+    delete balances.value[walletId]
   }
 
   // 加载钱包余额
@@ -482,11 +512,11 @@ export const useWalletStore = defineStore('wallet', () => {
     balances,
     loading,
     error,
-    
+
     // 计算属性
     currentWalletTokens,
     totalBalance,
-    
+
     // 方法
     loadWallets,
     createWallet,
@@ -494,6 +524,8 @@ export const useWalletStore = defineStore('wallet', () => {
     importMnemonic,
     deleteWallet,
     setCurrentWallet,
+    updateWallet,
+    removeWallet,
     loadWalletBalance,
     refreshWalletBalance,
     transfer,

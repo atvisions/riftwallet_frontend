@@ -183,7 +183,7 @@ const handleAvatarError = (event: Event) => {
 
 const manageWallet = (wallet: Wallet) => {
   console.log('Manage wallet:', wallet)
-  // TODO: 实现钱包管理功能
+  router.push(`/wallet/${wallet.id}`)
   closeDropdown()
 }
 
