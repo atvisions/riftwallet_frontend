@@ -39,6 +39,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useWalletStore } from '@shared/stores/wallet'
 import { copyToClipboard } from '@shared/utils'
 import ResponsiveLayout from '@/popup/components/ResponsiveLayout.vue'
+import QRCode from 'qrcode'
 
 const walletStore = useWalletStore()
 const qrCanvas = ref<HTMLCanvasElement>()
@@ -52,7 +53,14 @@ const copyAddress = async () => {
 }
 
 onMounted(() => {
-  // TODO: Generate QR code
+  if (qrCanvas.value && currentWallet.value?.address) {
+    QRCode.toCanvas(qrCanvas.value, currentWallet.value.address, {
+      width: 200,
+      margin: 1
+    }, (error) => {
+      if (error) console.error('QR code generation failed:', error)
+    })
+  }
 })
 </script>
 

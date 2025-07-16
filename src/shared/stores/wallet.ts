@@ -2,7 +2,6 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { Wallet, WalletToken, WalletBalance, ApiResponse } from '@shared/types'
 import { MESSAGE_TYPES, APP_CONFIG } from '@shared/constants'
-import { sendMessage } from '@shared/utils/messaging'
 import { useAuthStore } from './auth'
 import { isExtensionEnvironment } from '@shared/utils/chrome-mock'
 
@@ -414,8 +413,14 @@ export const useWalletStore = defineStore('wallet', () => {
           timestamp: Date.now()
         }
 
-        balances.value[walletId] = balance
+        // 使用响应式更新方式，确保Vue能检测到变化
+        balances.value = {
+          ...balances.value,
+          [walletId]: balance
+        }
+        
         console.log('Balance updated for wallet:', walletId, balance)
+        console.log('Current balances state:', balances.value)
       } else {
         throw new Error(data.message || 'Failed to load balance')
       }
@@ -429,8 +434,24 @@ export const useWalletStore = defineStore('wallet', () => {
     try {
       loading.value = true
 
-      // 调用新的代币价格刷新API
-      await sendMessage('REFRESH_TOKEN_PRICES', { walletId })
+      // 直接调用刷新余额API（包含余额和价格）
+      const response = await fetch(`${APP_CONFIG.API_BASE_URL}/wallets/${walletId}/refresh_balances/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to refresh balance: ${response.status}`)
+      }
+
+      const data = await response.json()
+      if (data.status !== 'success') {
+        throw new Error(data.error || 'Failed to refresh balance')
+      }
+
+      console.log('Balance refresh successful:', data)
 
       // 重新加载余额
       await loadWalletBalance(walletId)

@@ -5,6 +5,7 @@
     :show-footer="false"
     :scrollable="true"
     @back="$router.go(-1)"
+    @scroll.native="handleScroll"
   >
     <!-- 自定义头部 -->
     <template #header>
@@ -16,6 +17,16 @@
           <h1 class="header-title">Transaction History</h1>
         </div>
         <div class="header-right">
+          <div class="filter-funnel">
+            <button class="funnel-btn" @click="showFilterMenu = !showFilterMenu">
+              <i class="ri-filter-3-line"></i>
+            </button>
+            <div v-if="showFilterMenu" class="filter-menu">
+              <div v-for="opt in filterOptions" :key="opt.value" class="filter-menu-item" :class="{active: filterType === opt.value}" @click="selectFilter(opt.value)">
+                {{ opt.label }}
+              </div>
+            </div>
+          </div>
           <button @click="refreshTransactions" :disabled="loading" class="refresh-button">
             <i class="ri-refresh-line" :class="{ 'spinning': loading }"></i>
           </button>
@@ -94,17 +105,29 @@
                   {{ getTransactionAddress(transaction) }}
                 </div>
               </div>
-              <div class="transaction-right">
-                <div class="transaction-amount" :class="getAmountClass(transaction)">
+              <div class="transaction-right-row">
+                <span class="transaction-amount" :class="getAmountClass(transaction)">
                   {{ formatAmount(transaction) }}
-                </div>
-                <div class="transaction-time">
+                </span>
+                <span class="transaction-time">
                   {{ formatTime(transaction.block_time || transaction.timestamp || transaction.created_at) }}
-                </div>
+                </span>
+                <span class="status-badge"
+                      :class="{
+                        'status-success': transaction.status === 'success',
+                        'status-failed': transaction.status === 'failed',
+                        'status-pending': transaction.status === 'pending',
+                        'status-unknown': !['success','failed','pending'].includes(transaction.status)
+                      }">
+                  {{ transaction.status ? (transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)) : 'Unknown' }}
+                </span>
               </div>
             </div>
           </div>
         </div>
+        <!-- 加载更多/无更多提示 -->
+        <div v-if="loadingMore" class="loading-more">Loading more...</div>
+        <div v-else-if="allLoaded && transactions.length > 0" class="no-more">No more records</div>
       </div>
     </div>
   </ResponsiveLayout>
@@ -124,17 +147,44 @@ const transactions = ref<any[]>([])
 const loading = ref(false)
 const error = ref('')
 
+// 分页相关
+const page = ref(1)
+const limit = 10
+const total = ref(0)
+const loadingMore = ref(false)
+const allLoaded = computed(() => transactions.value.length >= total.value)
+
+// 筛选类型
+const filterType = ref('all') // all, sent, received
+const showFilterMenu = ref(false)
+const filterOptions = [
+  { label: 'All', value: 'all' },
+  { label: 'Sent', value: 'sent' },
+  { label: 'Received', value: 'received' }
+]
+const selectFilter = (val: string) => {
+  filterType.value = val
+  showFilterMenu.value = false
+}
+
+const filteredTransactions = computed(() => {
+  if (filterType.value === 'all') return transactions.value
+  if (filterType.value === 'sent') return transactions.value.filter(t => getTransactionType(t).toLowerCase() === 'sent')
+  if (filterType.value === 'received') return transactions.value.filter(t => getTransactionType(t).toLowerCase() === 'received')
+  return transactions.value
+})
+
 // 计算属性
 const currentWallet = computed(() => walletStore.currentWallet)
 
 // 按日期分组交易
 const groupedTransactions = computed(() => {
-  if (!transactions.value || transactions.value.length === 0) {
+  if (!filteredTransactions.value || filteredTransactions.value.length === 0) {
     return {}
   }
 
   const groups: { [key: string]: any[] } = {}
-  transactions.value.forEach(transaction => {
+  filteredTransactions.value.forEach(transaction => {
     const timestamp = transaction.block_time || transaction.timestamp || transaction.created_at
     const date = formatDate(timestamp)
 
@@ -147,16 +197,18 @@ const groupedTransactions = computed(() => {
   return groups
 })
 
-// 获取交易记录
-const fetchTransactions = async () => {
+// 获取交易记录（分页）
+const fetchTransactions = async (isLoadMore = false) => {
   if (!currentWallet.value) return
+  if (loading.value || loadingMore.value) return
 
-  loading.value = true
+  if (isLoadMore) loadingMore.value = true
+  else loading.value = true
   error.value = ''
 
   try {
     const response = await fetch(
-      `${APP_CONFIG.API_BASE_URL}/wallets/${currentWallet.value.id}/transaction_history/`,
+      `${APP_CONFIG.API_BASE_URL}/wallets/${currentWallet.value.id}/transaction_history/?page=${page.value}&limit=${limit}`,
       {
         method: 'GET',
         headers: {
@@ -171,17 +223,33 @@ const fetchTransactions = async () => {
       throw new Error(data.message || 'Failed to fetch transactions')
     }
 
-    transactions.value = data.transactions || data || []
+    total.value = data.total || 0
+    if (isLoadMore) {
+      transactions.value = [...transactions.value, ...(data.transactions || data || [])]
+    } else {
+      transactions.value = data.transactions || data || []
+    }
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load transactions'
     console.error('Failed to fetch transactions:', err)
   } finally {
-    loading.value = false
+    if (isLoadMore) loadingMore.value = false
+    else loading.value = false
+  }
+}
+
+// 下拉加载更多
+const handleScroll = (e: Event) => {
+  const el = e.target as HTMLElement
+  if (el.scrollHeight - el.scrollTop - el.clientHeight < 60 && !loadingMore.value && !allLoaded.value) {
+    page.value++
+    fetchTransactions(true)
   }
 }
 
 // 刷新交易记录
 const refreshTransactions = () => {
+  page.value = 1
   fetchTransactions()
 }
 
@@ -407,7 +475,30 @@ onMounted(() => {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+}
+
+.filter-group {
+  display: flex;
+  gap: 4px;
+  margin-right: 8px;
+}
+
+.filter-btn {
+  padding: 6px 14px;
+  border: none;
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.filter-btn.active {
+  background: #6366f1;
+  color: #fff;
 }
 
 .back-button, .refresh-button {
@@ -442,6 +533,46 @@ onMounted(() => {
   font-weight: 600;
   margin: 0;
   color: white;
+}
+
+.filter-funnel {
+  position: relative;
+}
+.funnel-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+.funnel-btn:hover {
+  background: rgba(99,102,241,0.12);
+}
+.filter-menu {
+  position: absolute;
+  top: 36px;
+  right: 0;
+  background: #232a4d;
+  border: 1px solid #363e5a;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px 0 rgba(31,38,135,0.10);
+  min-width: 110px;
+  z-index: 10;
+  padding: 4px 0;
+}
+.filter-menu-item {
+  padding: 8px 18px;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+.filter-menu-item.active, .filter-menu-item:hover {
+  background: #6366f1;
+  color: #fff;
 }
 
 // 主要内容容器
@@ -541,85 +672,64 @@ onMounted(() => {
 .transactions-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .transaction-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .date-header {
   font-size: 14px;
-  font-weight: 600;
-  color: #9ca3af;
-  padding: 8px 16px 4px 16px; // 添加左右边距与卡片对齐
+  font-weight: 700;
+  color: #6366f1;
+  padding: 8px 16px 4px 16px;
   margin-top: 8px;
-
-  &:first-child {
-    margin-top: 0;
-  }
+  letter-spacing: 0.5px;
 }
 
 .transaction-item {
-  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, #232a4d 0%, #334155 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
-  padding: 16px;
-  margin: 0 16px 12px 16px; // 添加外边距
+  padding: 12px 14px 10px 14px;
+  margin: 0 12px 6px 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.18s;
   display: flex;
   align-items: center;
   gap: 12px;
-
+  box-shadow: 0 1px 4px 0 rgba(31,38,135,0.03);
+  min-height: 48px;
   &:hover {
     background: linear-gradient(135deg, #334155 0%, #475569 100%);
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: rgba(99,102,241,0.18);
     transform: translateY(-1px);
   }
 }
 
 .transaction-icon {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255,255,255,0.10);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   overflow: hidden;
   position: relative;
-
-  i {
-    font-size: 18px;
-  }
-
+  i { font-size: 17px; }
   .token-icon {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 50%;
+    width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
   }
-
   .transaction-type-indicator {
-    position: absolute;
-    bottom: -2px;
-    right: -2px;
-    width: 16px;
-    height: 16px;
-    background: #1e293b;
-    border: 2px solid #1e293b;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    i {
-      font-size: 8px;
-    }
+    position: absolute; bottom: -2px; right: -2px; width: 14px; height: 14px;
+    background: #232a4d; border: 2px solid #232a4d; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    i { font-size: 8px; }
   }
 }
 
@@ -627,24 +737,17 @@ onMounted(() => {
   flex: 1;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   min-width: 0;
+  gap: 8px;
 }
 
 .transaction-left {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   flex: 1;
   min-width: 0;
-}
-
-.transaction-right {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  align-items: flex-end;
-  text-align: right;
 }
 
 .transaction-type {
@@ -653,35 +756,35 @@ onMounted(() => {
   color: #f1f5f9;
 }
 
-.transaction-amount {
-  font-size: 14px;
-  font-weight: 600;
-
-  &.amount-positive {
-    color: #22c55e;
-  }
-
-  &.amount-negative {
-    color: #ef4444;
-  }
-
-  &.amount-neutral {
-    color: #f1f5f9;
-  }
-}
-
 .transaction-address {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+  color: #9ca3af;
+  font-family: 'Monaco', 'Menlo', monospace;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 200px;
+  max-width: 160px;
+}
+
+.transaction-right-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  min-width: 80px;
+}
+
+.transaction-amount {
+  font-size: 14px;
+  font-weight: 700;
+  &.amount-positive { color: #22c55e; }
+  &.amount-negative { color: #ef4444; }
+  &.amount-neutral { color: #f1f5f9; }
 }
 
 .transaction-time {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+  color: #9ca3af;
 }
 
 .transaction-details {
@@ -706,31 +809,29 @@ onMounted(() => {
 }
 
 .status-badge {
-  padding: 4px 8px;
+  padding: 2px 8px;
   border-radius: 6px;
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  margin-top: 0;
+  &.status-success { background: rgba(34,197,94,0.16); color: #22c55e; }
+  &.status-pending { background: rgba(251,191,36,0.16); color: #fbbf24; }
+  &.status-failed { background: rgba(239,68,68,0.16); color: #ef4444; }
+  &.status-unknown { background: rgba(156,163,175,0.16); color: #9ca3af; }
+}
 
-  &.status-success {
-    background: rgba(34, 197, 94, 0.2);
-    color: #22c55e;
-  }
-
-  &.status-pending {
-    background: rgba(251, 191, 36, 0.2);
-    color: #fbbf24;
-  }
-
-  &.status-failed {
-    background: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
-  }
-
-  &.status-unknown {
-    background: rgba(156, 163, 175, 0.2);
-    color: #9ca3af;
-  }
+.loading-more {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 14px;
+  padding: 12px 0 0 0;
+}
+.no-more {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 14px;
+  padding: 12px 0 0 0;
 }
 </style>

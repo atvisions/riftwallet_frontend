@@ -57,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@shared/stores/auth'
 import { useWalletStore } from '@shared/stores/wallet'
@@ -126,8 +126,8 @@ const handleVerifyPassword = async () => {
         isPasswordSessionValid: authStore.isPasswordSessionValid
       })
 
-      // 验证成功，会话已在 verifyPaymentPassword 中设置
-      // 等待一小段时间确保会话状态更新完成
+      // 等待 isPasswordSessionValid 响应式更新
+      await nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
 
       // 加载钱包数据并检查是否有钱包
@@ -138,7 +138,6 @@ const handleVerifyPassword = async () => {
       if (walletStore.wallets.length > 0) {
         // 有钱包，跳转到首页
         console.log('🏠 有钱包，从密码验证页面跳转到首页')
-        console.log('🎯 当前钱包:', walletStore.currentWallet)
         // 使用 replace 而不是 push，避免在历史记录中留下验证页面
         await router.replace('/')
         console.log('✅ 路由跳转完成')
@@ -157,7 +156,7 @@ const handleVerifyPassword = async () => {
     error.value = err instanceof Error ? err.message : 'Verification failed'
   } finally {
     loading.value = false
-    console.log('🏁 密码验证流程结束')
+    console.log('�� 密码验证流程结束')
   }
 }
 
