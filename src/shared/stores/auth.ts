@@ -211,6 +211,8 @@ export const useAuthStore = defineStore('auth', () => {
       loading.value = true
       error.value = null
 
+      console.log('🔐 开始验证支付密码')
+
       const response = await fetch(`${APP_CONFIG.API_BASE_URL}/wallets/verify_password/`, {
         method: 'POST',
         headers: {
@@ -223,15 +225,26 @@ export const useAuthStore = defineStore('auth', () => {
       })
 
       const data = await response.json()
+      console.log('🔐 密码验证API响应:', data)
 
       if (data.state === 'success') {
+        console.log('✅ 密码验证成功，设置会话')
         // 验证成功，设置密码会话
         await setPasswordSession()
+
+        // 确保状态已更新
+        console.log('🔍 会话设置后的状态:', {
+          isPasswordSessionValid: isPasswordSessionValid.value,
+          hasPaymentPassword: hasPaymentPassword.value
+        })
+
         return true
       } else {
+        console.log('❌ 密码验证失败:', data.message)
         throw new Error(data.message || 'Invalid password')
       }
     } catch (err) {
+      console.error('🔐 密码验证过程出错:', err)
       error.value = err instanceof Error ? err.message : 'Password verification failed'
       return false
     } finally {

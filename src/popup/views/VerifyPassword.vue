@@ -84,6 +84,13 @@ const router = useRouter()
 const authStore = useAuthStore()
 const walletStore = useWalletStore()
 
+// 获取 App.vue 中的验证标志（通过 provide/inject 或全局状态）
+// 这里我们使用一个简单的方法来重置标志
+const resetVerifyingFlag = () => {
+  // 通过 sessionStorage 来协调状态
+  sessionStorage.removeItem('isVerifyingPassword')
+}
+
 // 响应式数据
 const password = ref('')
 const showPassword = ref(false)
@@ -126,14 +133,31 @@ const handleVerifyPassword = async () => {
         isPasswordSessionValid: authStore.isPasswordSessionValid
       })
 
-      // 等待 isPasswordSessionValid 响应式更新
+      // 等待状态更新完成
       await nextTick()
-      await new Promise(resolve => setTimeout(resolve, 50))
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      // 再次确认会话状态已更新
+      if (!authStore.isPasswordSessionValid) {
+        console.warn('⚠️ 密码会话状态未正确更新，重新检查')
+        await authStore.checkPasswordSession()
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
 
       // 加载钱包数据并检查是否有钱包
       console.log('📱 开始加载钱包列表')
       await walletStore.loadWallets()
       console.log('📊 钱包加载完成，钱包数量:', walletStore.wallets.length)
+
+      // 确保状态完全更新后再跳转
+      console.log('🔄 最终状态检查:', {
+        hasPaymentPassword: authStore.hasPaymentPassword,
+        isPasswordSessionValid: authStore.isPasswordSessionValid,
+        walletsCount: walletStore.wallets.length
+      })
+
+      // 重置验证标志
+      resetVerifyingFlag()
 
       if (walletStore.wallets.length > 0) {
         // 有钱包，跳转到首页

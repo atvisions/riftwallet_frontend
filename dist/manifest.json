@@ -57,9 +57,6 @@
   ],
   
   "host_permissions": [
-    "http://localhost:8000/*",
-    "http://127.0.0.1:8000/*",
-    "http://192.168.3.56:8000/*",
     "https://www.riftwallet.io/*",
     "https://api.coingecko.com/*",
     "https://api.cryptocompare.com/*"
@@ -76,7 +73,7 @@
   ],
   
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' http://localhost:8000 http://127.0.0.1:8000 http://192.168.3.56:8000 https://www.riftwallet.io https://api.coingecko.com https://api.cryptocompare.com;"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://www.riftwallet.io https://api.coingecko.com https://api.cryptocompare.com;"
   },
   
   "externally_connectable": {

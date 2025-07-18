@@ -27,6 +27,7 @@ const authStore = useAuthStore()
 
 // 初始化状态
 const isInitialized = ref(false)
+const isVerifyingPassword = ref(false) // 防止重复密码验证的标志
 
 // 全局布局模式检测
 const currentMode = ref<'popup' | 'sidepanel'>('popup')
@@ -144,49 +145,53 @@ onMounted(async () => {
 watch(() => router.currentRoute.value.path, async (newPath, oldPath) => {
   console.log('Route changed from', oldPath, 'to', newPath)
 
-  // 如果从密码验证页面跳转到首页，不要重新执行路由逻辑
-  if (oldPath === '/verify-password' && newPath === '/') {
-    console.log('Skipping route logic after password verification')
-    return
-  }
+  // 定义不需要重新验证的页面跳转情况
+  const skipVerificationCases = [
+    // 从密码验证页面跳转到首页
+    oldPath === '/verify-password' && newPath === '/',
+    // 从钱包选择页面跳转到首页
+    oldPath === '/wallet-choice' && newPath === '/',
+    // 从钱包创建相关页面跳转到首页
+    ['/select-chain', '/verify-mnemonic', '/confirm-mnemonic', '/create-wallet-password'].includes(oldPath) && newPath === '/',
+    // 从钱包导入相关页面跳转到首页
+    ['/import-wallet', '/import-mnemonic', '/import-private-key', '/import-private-key-input', '/import-mnemonic-input', '/wallet-import-loading'].includes(oldPath) && newPath === '/',
+    // 从设置密码页面跳转到首页
+    oldPath === '/setup-password' && newPath === '/'
+  ]
 
-  // 如果从钱包选择页面跳转到首页，不要重新执行路由逻辑
-  if (oldPath === '/wallet-choice' && newPath === '/') {
-    console.log('Skipping route logic after wallet creation/import')
-    return
-  }
-
-  // 如果从任何钱包导入相关页面跳转到首页，不要重新执行路由逻辑
-  const importPages = ['/import-wallet', '/import-mnemonic', '/import-private-key', '/import-private-key-select-chain', '/import-private-key-input', '/wallet-import-loading']
-  if (importPages.includes(oldPath) && newPath === '/') {
-    console.log('Skipping route logic after wallet import')
-    return
-  }
-
-  // 如果从钱包创建相关页面跳转到首页，不要重新执行路由逻辑
-  const walletCreationPages = ['/select-chain', '/verify-mnemonic', '/confirm-mnemonic', '/create-wallet-password']
-  if (walletCreationPages.includes(oldPath) && newPath === '/') {
-    console.log('Skipping route logic after wallet creation')
+  if (skipVerificationCases.some(condition => condition)) {
+    console.log('Skipping route logic - coming from authentication/wallet setup flow')
     return
   }
 
   // 如果跳转到首页且已经初始化过，检查是否需要重新验证
-  // 但是要排除从密码验证页面和钱包选择页面跳转过来的情况，避免重复验证
-  if (newPath === '/' && isInitialized.value &&
-      oldPath !== '/verify-password' &&
-      oldPath !== '/wallet-choice' &&
-      oldPath !== '/create-wallet-password') {
-    // 给一个较长的延迟，确保密码验证的状态更新完成
+  if (newPath === '/' && isInitialized.value) {
+    // 检查是否正在验证密码（通过 sessionStorage 协调）
+    const isCurrentlyVerifying = sessionStorage.getItem('isVerifyingPassword') === 'true'
+
+    if (isCurrentlyVerifying) {
+      console.log('Already verifying password, skipping duplicate check')
+      return
+    }
+
+    // 给一个延迟，确保前一个页面的状态更新完成
     setTimeout(async () => {
+      // 再次检查是否正在验证
+      if (sessionStorage.getItem('isVerifyingPassword') === 'true') {
+        console.log('Password verification in progress, skipping')
+        return
+      }
+
       // 重新检查会话状态
       await authStore.checkPasswordSession()
 
       // 只有在会话确实过期的情况下才重新验证
       if (authStore.hasPaymentPassword && !authStore.isPasswordSessionValid) {
         console.log('Session expired after delay check, redirecting to verify password')
+        sessionStorage.setItem('isVerifyingPassword', 'true')
         router.push('/verify-password')
       }
-    }, 500) // 增加延迟到500ms，确保状态更新完成
+    }, 300) // 减少延迟到300ms，但仍然给足够时间让状态更新
   }
 })
 

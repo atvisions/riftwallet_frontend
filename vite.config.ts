@@ -122,25 +122,7 @@ export default defineConfig({
     hmr: {
       port: 3001
     },
-    open: '/src/popup/index.html',
-    proxy: {
-      // 代理 API 请求到本地后端（因为生产服务器 IP 被 Moralis 封了）
-      '/api': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-        secure: false,
-        configure: (proxy, _options) => {
-          proxy.on('error', (err, _req, _res) => {
-            console.log('proxy error', err);
-          });
-          proxy.on('proxyReq', (proxyReq, req, _res) => {
-            console.log('Sending Request to Local Backend:', req.method, req.url);
-          });
-          proxy.on('proxyRes', (proxyRes, req, _res) => {
-            console.log('Received Response from Local Backend:', proxyRes.statusCode, req.url);
-          });
-        },
-      }
-    }
+    open: '/src/popup/index.html'
+    // 移除本地API代理，直接使用生产环境API
   }
 })
