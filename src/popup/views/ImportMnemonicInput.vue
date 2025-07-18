@@ -71,11 +71,41 @@
         <div v-if="selectedChain?.chain === 'KDA'" class="form-group">
           <label>Kadena Chain ID</label>
           <p class="form-hint">Select the Kadena chain ID (0-19)</p>
-          <select v-model="kadenaChainId" class="kadena-select">
-            <option v-for="i in 20" :key="i-1" :value="(i-1).toString()">
-              Chain {{ i-1 }}
-            </option>
-          </select>
+
+          <div class="chain-selector-container">
+            <div class="chain-id-selector" @click="showChainList = !showChainList">
+              <div class="selected-chain-id">
+                <div class="chain-id-icon">
+                  <i class="ri-link"></i>
+                </div>
+                <div class="chain-id-info">
+                  <div class="chain-id-label">Chain {{ kadenaChainId }}</div>
+                  <div class="chain-id-desc">Kadena Chain {{ kadenaChainId }}</div>
+                </div>
+              </div>
+              <i class="ri-arrow-down-s-line dropdown-icon" :class="{ 'rotated': showChainList }"></i>
+            </div>
+
+            <!-- Chain ID 下拉列表 -->
+            <div v-if="showChainList" class="chain-dropdown">
+              <div
+                v-for="i in 20"
+                :key="i-1"
+                @click="selectChainId((i-1).toString())"
+                class="chain-option"
+                :class="{ 'selected': kadenaChainId === (i-1).toString() }"
+              >
+                <div class="chain-icon">
+                  <i class="ri-link"></i>
+                </div>
+                <div class="chain-info">
+                  <div class="chain-label">Chain {{ i-1 }}</div>
+                  <div class="chain-desc">Kadena Chain {{ i-1 }}</div>
+                </div>
+                <i v-if="kadenaChainId === (i-1).toString()" class="ri-check-line"></i>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Error Message -->
@@ -110,6 +140,7 @@ const mnemonic = ref('')
 const password = ref('')
 const kadenaChainId = ref('0')
 const showPassword = ref(false)
+const showChainList = ref(false)
 const error = ref('')
 const mnemonicError = ref('')
 const passwordError = ref('')
@@ -142,6 +173,12 @@ const validatePassword = () => {
   }
   passwordError.value = ''
   return true
+}
+
+// 选择链ID
+const selectChainId = (chainId: string) => {
+  kadenaChainId.value = chainId
+  showChainList.value = false
 }
 
 // 导入钱包
@@ -443,19 +480,149 @@ onMounted(() => {
   }
 }
 
-.kadena-select {
-  width: 100%;
-  padding: 16px;
+// Chain ID 选择器样式
+.chain-selector-container {
+  position: relative;
+}
+
+.chain-id-selector {
   background: rgba(255, 255, 255, 0.05);
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
-  color: #f1f5f9;
-  font-size: 14px;
-  
-  &:focus {
-    outline: none;
-    border-color: #6366f1;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .selected-chain-id {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+
+    .chain-id-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      overflow: hidden;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.1);
+
+      i {
+        font-size: 16px;
+        color: #f59e0b;
+      }
+    }
+
+    .chain-id-info {
+      flex: 1;
+
+      .chain-id-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #f1f5f9;
+        margin-bottom: 2px;
+      }
+
+      .chain-id-desc {
+        font-size: 12px;
+        color: #9ca3af;
+      }
+    }
+  }
+
+  .dropdown-icon {
+    font-size: 16px;
+    color: #9ca3af;
+    transition: transform 0.3s ease;
+
+    &.rotated {
+      transform: rotate(180deg);
+    }
+  }
+}
+
+.chain-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  margin-top: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+
+  .chain-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    &.selected {
+      background: rgba(59, 130, 246, 0.1);
+
+      .chain-info .chain-label {
+        color: #3b82f6;
+      }
+    }
+
+    .chain-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      i {
+        font-size: 16px;
+        color: #f59e0b;
+      }
+    }
+
+    .chain-info {
+      flex: 1;
+      margin-left: 12px;
+
+      .chain-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #f1f5f9;
+        margin-bottom: 2px;
+      }
+
+      .chain-desc {
+        font-size: 12px;
+        color: #9ca3af;
+      }
+    }
+
+    i {
+      font-size: 16px;
+      color: #3b82f6;
+    }
   }
 }
 

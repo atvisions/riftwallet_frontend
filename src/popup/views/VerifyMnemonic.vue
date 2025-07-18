@@ -21,17 +21,42 @@
 
     <!-- 主要内容 -->
     <div class="mnemonic-container">
-        <div class="header-section">
-          <h2>Your Recovery Phrase</h2>
-          <p>Write down these 12 words in order and keep them safe.</p>
+        <!-- 进度指示器 -->
+        <div class="progress-section">
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 50%"></div>
+          </div>
+          <div class="progress-text">Step 1 of 2</div>
         </div>
 
-        <div class="mnemonic-display">
+        <!-- 头部信息 -->
+        <div class="header-section">
+          <div class="header-icon">
+            <i class="ri-key-2-line"></i>
+          </div>
+          <h2>Your Recovery Phrase</h2>
+          <p>Write down these 12 words in the exact order shown. Keep them safe and never share with anyone.</p>
+        </div>
+
+        <!-- 助记词显示卡片 -->
+        <div class="mnemonic-card">
+          <div class="card-header">
+            <div class="security-badge">
+              <i class="ri-shield-check-line"></i>
+              <span>Secure</span>
+            </div>
+            <button class="copy-btn" @click="copyMnemonic" :class="{ 'copied': copySuccess }">
+              <i :class="copySuccess ? 'ri-check-line' : 'ri-clipboard-line'"></i>
+              <span>{{ copySuccess ? 'Copied!' : 'Copy' }}</span>
+            </button>
+          </div>
+
           <div class="word-grid">
             <div
               v-for="(word, index) in mnemonicWords"
               :key="index"
               class="word-item"
+              :style="{ animationDelay: `${index * 50}ms` }"
             >
               <span class="word-number">{{ index + 1 }}</span>
               <span class="word-text">{{ word }}</span>
@@ -39,24 +64,39 @@
           </div>
         </div>
 
-        <div class="action-section">
-          <button class="copy-btn" @click="copyMnemonic">
-            <i class="ri-clipboard-line"></i>
-            <span>Copy to Clipboard</span>
-          </button>
-        </div>
-
+        <!-- 错误信息 -->
         <div class="error-message" v-if="error">
           <i class="ri-error-warning-line"></i>
-          {{ error }}
+          <span>{{ error }}</span>
         </div>
 
+        <!-- 安全提示 -->
         <div class="security-tips">
-          <div class="tips-content">
-            <i class="ri-shield-check-line"></i>
-            <div>
-              <h3>Security Notice</h3>
-              <p>Never share your seed phrase. Store it safely offline.</p>
+          <div class="tip-item">
+            <div class="tip-icon">
+              <i class="ri-eye-off-line"></i>
+            </div>
+            <div class="tip-content">
+              <h4>Keep it private</h4>
+              <p>Never share your recovery phrase with anyone</p>
+            </div>
+          </div>
+          <div class="tip-item">
+            <div class="tip-icon">
+              <i class="ri-file-paper-line"></i>
+            </div>
+            <div class="tip-content">
+              <h4>Write it down</h4>
+              <p>Store it safely offline, not on your device</p>
+            </div>
+          </div>
+          <div class="tip-item">
+            <div class="tip-icon">
+              <i class="ri-sort-asc"></i>
+            </div>
+            <div class="tip-content">
+              <h4>Order matters</h4>
+              <p>The sequence of words is important</p>
             </div>
           </div>
         </div>
@@ -100,6 +140,7 @@ const mnemonicWords = ref<string[]>(Array(12).fill(''))
 const submitting = ref(false)
 const error = ref('')
 const selectedChain = ref('')
+const copySuccess = ref(false)
 
 // 计算属性
 const isValidMnemonic = computed(() => {
@@ -122,13 +163,13 @@ const copyMnemonic = async () => {
     }
 
     await navigator.clipboard.writeText(mnemonic)
-    // 可以添加一个临时的成功提示
-    console.log('Mnemonic copied to clipboard')
-
-    // 临时显示成功消息
-    const originalError = error.value
+    copySuccess.value = true
     error.value = ''
-    // 这里可以添加成功提示的UI，暂时用console.log
+
+    // 2秒后重置状态
+    setTimeout(() => {
+      copySuccess.value = false
+    }, 2000)
 
   } catch (err: any) {
     console.error('Copy error:', err)
@@ -212,171 +253,290 @@ onMounted(() => {
 .mnemonic-container {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
   max-width: 420px;
   margin: 0 auto;
   width: 100%;
   min-height: calc(100vh - 140px);
   flex: 1;
-  padding-bottom: 120px; /* 为底部固定按钮留出空间 */
+  padding-bottom: 120px;
 }
 
+// 进度指示器
+.progress-section {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+// 头部区域
 .header-section {
   text-align: center;
-  margin-bottom: 12px;
-
-  h2 {
-    font-size: 18px;
-    font-weight: 600;
-    margin: 0 0 6px 0;
-    color: #f1f5f9;
-  }
-
-  p {
-    color: #94a3b8;
-    margin: 0;
-    font-size: 13px;
-    line-height: 1.4;
-  }
+  margin-bottom: 8px;
 }
 
-.mnemonic-display {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 20px 16px;
-  margin-bottom: 16px;
+.header-icon {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3);
 
-  .word-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    min-width: 0;
-  }
-
-  .word-item {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 12px 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s ease;
-    min-width: 0;
-    min-height: 60px;
-    justify-content: center;
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.08);
-      border-color: rgba(99, 102, 241, 0.3);
-    }
-
-    .word-number {
-      font-size: 10px;
-      color: #64748b;
-      font-weight: 600;
-      line-height: 1;
-    }
-
-    .word-text {
-      color: #f1f5f9;
-      font-size: 14px;
-      font-weight: 500;
-      text-align: center;
-      word-break: break-word;
-      line-height: 1.2;
-    }
-  }
-}
-
-.action-section {
-  margin-top: 8px;
-
-  .copy-btn {
-    width: 100%;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    border: none;
-    border-radius: 12px;
-    padding: 12px 16px;
+  i {
+    font-size: 28px;
     color: white;
+  }
+}
+
+.header-section h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  color: #f1f5f9;
+}
+
+.header-section p {
+  color: #94a3b8;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+// 助记词卡片
+.mnemonic-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 20px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.security-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 12px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #22c55e;
+
+  i {
+    font-size: 14px;
+  }
+}
+
+.copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 12px;
+  padding: 8px 16px;
+  color: #6366f1;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(99, 102, 241, 0.25);
+    transform: translateY(-1px);
+  }
+
+  &.copied {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: rgba(34, 197, 94, 0.3);
+    color: #22c55e;
+  }
+
+  i {
+    font-size: 14px;
+  }
+}
+
+.word-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  min-width: 0;
+}
+
+.word-item {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  min-width: 0;
+  min-height: 60px;
+  justify-content: center;
+  animation: fadeInUp 0.5s ease forwards;
+  opacity: 0;
+  transform: translateY(10px);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(99, 102, 241, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+
+  .word-number {
+    font-size: 11px;
+    color: white;
+    font-weight: 700;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+
+  .word-text {
+    color: #f1f5f9;
     font-size: 14px;
     font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: all 0.3s ease;
-
-    &:hover {
-      background: linear-gradient(135deg, #5855eb, #7c3aed);
-      transform: translateY(-1px);
-      box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
-    }
-
-    &:active {
-      transform: translateY(0);
-    }
-
-    i {
-      font-size: 16px;
-    }
+    text-align: center;
+    word-break: break-word;
+    line-height: 1.2;
+    font-family: 'Monaco', 'Menlo', monospace;
   }
 }
 
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// 错误信息
 .error-message {
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: 8px;
-  padding: 12px;
+  border-radius: 12px;
+  padding: 16px;
   color: #fca5a5;
   font-size: 14px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 24px;
-  
+  gap: 12px;
+
+  i {
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  span {
+    flex: 1;
+  }
+}
+
+// 安全提示
+.security-tips {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tip-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.tip-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(99, 102, 241, 0.15);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
   i {
     font-size: 16px;
+    color: #6366f1;
   }
 }
 
-.security-tips {
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.2);
-  border-radius: 8px;
-  padding: 12px;
-  margin-top: auto;
-  margin-bottom: 0;
+.tip-content {
+  flex: 1;
+  min-width: 0;
 
-  .tips-content {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+  h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #f1f5f9;
+    margin: 0 0 4px 0;
+  }
 
-    i {
-      color: #10b981;
-      font-size: 18px;
-      flex-shrink: 0;
-    }
-
-    h3 {
-      font-size: 13px;
-      font-weight: 600;
-      margin: 0 0 2px 0;
-      color: #10b981;
-    }
-
-    p {
-      font-size: 11px;
-      color: #94a3b8;
-      margin: 0;
-      line-height: 1.3;
-    }
+  p {
+    font-size: 13px;
+    color: #94a3b8;
+    margin: 0;
+    line-height: 1.4;
   }
 }
+
+
 
 .bottom-section {
   position: fixed;
@@ -470,7 +630,7 @@ onMounted(() => {
 
     .word-item {
       padding: 10px 6px;
-      min-height: 55px;
+      min-height: 50px;
 
       .word-number {
         font-size: 9px;

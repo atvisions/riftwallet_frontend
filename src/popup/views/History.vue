@@ -84,43 +84,50 @@
                 />
                 <!-- 默认图标 -->
                 <div v-else class="default-icon">
-                  <i class="fas fa-coins"></i>
+                  <i class="ri-coins-line"></i>
                 </div>
               </div>
               <!-- 交易类型指示器 -->
-              <div class="transaction-type-indicator">
+              <div class="transaction-type-indicator" :class="{
+                'type-sent': getTransactionType(transaction).toLowerCase() === 'sent',
+                'type-received': getTransactionType(transaction).toLowerCase() === 'received'
+              }">
                 <i v-if="getTransactionType(transaction).toLowerCase() === 'sent'"
-                   class="fas fa-arrow-up"></i>
+                   class="ri-arrow-up-line"></i>
                 <i v-else-if="getTransactionType(transaction).toLowerCase() === 'received'"
-                   class="fas fa-arrow-down"></i>
+                   class="ri-arrow-down-line"></i>
                 <i v-else
-                   class="fas fa-exchange-alt"></i>
+                   class="ri-exchange-line"></i>
               </div>
             </div>
 
             <div class="transaction-info">
-              <div class="transaction-left">
-                <div class="transaction-type">{{ getTransactionType(transaction) }}</div>
-                <div class="transaction-address">
-                  {{ getTransactionAddress(transaction) }}
+              <div class="transaction-main">
+                <div class="transaction-header">
+                  <div class="transaction-type">{{ getTransactionType(transaction) }}</div>
+                  <div class="transaction-amount" :class="getAmountClass(transaction)">
+                    {{ formatAmount(transaction) }}
+                  </div>
                 </div>
-              </div>
-              <div class="transaction-right-row">
-                <span class="transaction-amount" :class="getAmountClass(transaction)">
-                  {{ formatAmount(transaction) }}
-                </span>
-                <span class="transaction-time">
-                  {{ formatTime(transaction.block_time || transaction.timestamp || transaction.created_at) }}
-                </span>
-                <span class="status-badge"
-                      :class="{
-                        'status-success': transaction.status === 'success',
-                        'status-failed': transaction.status === 'failed',
-                        'status-pending': transaction.status === 'pending',
-                        'status-unknown': !['success','failed','pending'].includes(transaction.status)
-                      }">
-                  {{ transaction.status ? (transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)) : 'Unknown' }}
-                </span>
+                <div class="transaction-details">
+                  <div class="transaction-address">
+                    {{ getTransactionAddress(transaction) }}
+                  </div>
+                  <div class="transaction-meta">
+                    <span class="transaction-time">
+                      {{ formatTime(transaction.block_time || transaction.timestamp || transaction.created_at) }}
+                    </span>
+                    <span class="status-badge"
+                          :class="{
+                            'status-success': transaction.status === 'success',
+                            'status-failed': transaction.status === 'failed',
+                            'status-pending': transaction.status === 'pending',
+                            'status-unknown': !['success','failed','pending'].includes(transaction.status)
+                          }">
+                      {{ transaction.status ? (transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)) : 'Unknown' }}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -596,23 +603,27 @@ onMounted(() => {
   justify-content: center;
   flex: 1;
   min-height: 300px;
-  padding: 40px 20px;
+  padding: 60px 20px;
 
   i {
-    font-size: 48px;
-    margin-bottom: 16px;
+    font-size: 64px;
+    margin-bottom: 24px;
+    opacity: 0.7;
   }
 
   h2 {
-    font-size: 20px;
-    margin: 0 0 8px 0;
+    font-size: 22px;
+    margin: 0 0 12px 0;
     color: #f1f5f9;
+    font-weight: 600;
   }
 
   p {
-    color: #9ca3af;
+    color: #94a3b8;
     margin: 0 0 16px 0;
-    font-size: 14px;
+    font-size: 15px;
+    line-height: 1.5;
+    max-width: 280px;
   }
 }
 
@@ -682,109 +693,163 @@ onMounted(() => {
 }
 
 .date-header {
-  font-size: 14px;
-  font-weight: 700;
-  color: #6366f1;
-  padding: 8px 16px 4px 16px;
-  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #94a3b8;
+  padding: 16px 20px 8px 20px;
+  margin-top: 12px;
   letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 .transaction-item {
-  background: linear-gradient(135deg, #232a4d 0%, #334155 100%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 12px 14px 10px 14px;
-  margin: 0 12px 6px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 16px;
+  margin: 0 16px 8px 16px;
   cursor: pointer;
-  transition: all 0.18s;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   gap: 12px;
-  box-shadow: 0 1px 4px 0 rgba(31,38,135,0.03);
-  min-height: 48px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
   &:hover {
-    background: linear-gradient(135deg, #334155 0%, #475569 100%);
-    border-color: rgba(99,102,241,0.18);
-    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(99, 102, 241, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 }
 
 .transaction-icon {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.10);
+  background: rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  overflow: hidden;
   position: relative;
-  i { font-size: 17px; }
-  .token-icon {
-    width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
+  margin-right: 4px; /* 为右侧指示器留出空间 */
+
+  .default-icon {
+    color: #94a3b8;
+    i {
+      font-size: 20px;
+    }
   }
+
+  .token-icon {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+  }
+
   .transaction-type-indicator {
-    position: absolute; bottom: -2px; right: -2px; width: 14px; height: 14px;
-    background: #232a4d; border: 2px solid #232a4d; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    i { font-size: 8px; }
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #1e293b;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &.type-sent {
+      background: #ef4444;
+      color: white;
+    }
+
+    &.type-received {
+      background: #22c55e;
+      color: white;
+    }
+
+    i {
+      font-size: 9px;
+      font-weight: 600;
+    }
   }
 }
 
 .transaction-info {
   flex: 1;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
   min-width: 0;
+}
+
+.transaction-main {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
-.transaction-left {
+.transaction-header {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
-  flex: 1;
-  min-width: 0;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .transaction-type {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: #f1f5f9;
 }
 
+.transaction-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
 .transaction-address {
-  font-size: 11px;
-  color: #9ca3af;
+  font-size: 12px;
+  color: #94a3b8;
   font-family: 'Monaco', 'Menlo', monospace;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 160px;
+  flex: 1;
+  min-width: 0;
 }
 
-.transaction-right-row {
+.transaction-meta {
   display: flex;
-  flex-direction: row;
   align-items: center;
-  gap: 10px;
-  min-width: 80px;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .transaction-amount {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
-  &.amount-positive { color: #22c55e; }
-  &.amount-negative { color: #ef4444; }
-  &.amount-neutral { color: #f1f5f9; }
+  text-align: right;
+
+  &.amount-positive {
+    color: #22c55e;
+  }
+  &.amount-negative {
+    color: #ef4444;
+  }
+  &.amount-neutral {
+    color: #f1f5f9;
+  }
 }
 
 .transaction-time {
   font-size: 11px;
-  color: #9ca3af;
+  color: #64748b;
+  font-weight: 500;
 }
 
 .transaction-details {
@@ -809,17 +874,33 @@ onMounted(() => {
 }
 
 .status-badge {
-  padding: 2px 8px;
-  border-radius: 6px;
+  padding: 4px 8px;
+  border-radius: 8px;
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-top: 0;
-  &.status-success { background: rgba(34,197,94,0.16); color: #22c55e; }
-  &.status-pending { background: rgba(251,191,36,0.16); color: #fbbf24; }
-  &.status-failed { background: rgba(239,68,68,0.16); color: #ef4444; }
-  &.status-unknown { background: rgba(156,163,175,0.16); color: #9ca3af; }
+
+  &.status-success {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+  }
+  &.status-pending {
+    background: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(251, 191, 36, 0.3);
+  }
+  &.status-failed {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+  }
+  &.status-unknown {
+    background: rgba(156, 163, 175, 0.15);
+    color: #9ca3af;
+    border: 1px solid rgba(156, 163, 175, 0.3);
+  }
 }
 
 .loading-more {
