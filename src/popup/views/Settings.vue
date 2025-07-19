@@ -73,7 +73,7 @@
             </div>
             <div class="setting-info">
               <div class="setting-name">Auto-lock</div>
-              <div class="setting-desc">Lock wallet after inactivity</div>
+              <div class="setting-desc">Lock wallet after 30 minutes of inactivity</div>
             </div>
             <div class="setting-toggle">
               <input type="checkbox" v-model="autoLock" id="autoLock">
@@ -118,7 +118,18 @@
             </div>
           </div>
 
-          <div class="setting-item" @click="about">
+          <div class="setting-item" @click="openPrivacyPolicy">
+            <div class="setting-icon">
+              <i class="ri-shield-user-line"></i>
+            </div>
+            <div class="setting-info">
+              <div class="setting-name">Privacy Policy</div>
+              <div class="setting-desc">View our privacy policy</div>
+            </div>
+            <i class="ri-external-link-line"></i>
+          </div>
+
+          <div class="setting-item" @click="openAbout">
             <div class="setting-icon">
               <i class="ri-information-line"></i>
             </div>
@@ -126,26 +137,17 @@
               <div class="setting-name">About</div>
               <div class="setting-desc">Version and info</div>
             </div>
-            <i class="ri-arrow-right-s-line"></i>
+            <i class="ri-external-link-line"></i>
           </div>
         </div>
       </div>
 
-      <!-- 危险操作 -->
-      <div class="settings-section danger">
-        <h3 class="section-title">Danger Zone</h3>
-        <div class="settings-list">
-          <div class="setting-item danger" @click="resetWallet">
-            <div class="setting-icon">
-              <i class="ri-delete-bin-line"></i>
-            </div>
-            <div class="setting-info">
-              <div class="setting-name">Reset Wallet</div>
-              <div class="setting-desc">Clear all data</div>
-            </div>
-            <i class="ri-arrow-right-s-line"></i>
-          </div>
-        </div>
+      <!-- 锁定按钮 - 页面最底部 -->
+      <div class="lock-section">
+        <button class="lock-button" @click="lockWallet">
+          <i class="ri-lock-line"></i>
+          <span>Lock Wallet</span>
+        </button>
       </div>
     </div>
 
@@ -157,11 +159,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import ResponsiveLayout from '../components/ResponsiveLayout.vue'
 import TopHeader from '../components/TopHeader.vue'
 import BottomNavigation from '../components/BottomNavigation.vue'
+import { getStorage } from '@shared/utils/chrome-mock'
 
 // 接收 mode 属性
 const props = defineProps<{
@@ -177,14 +180,59 @@ const router = useRouter()
 
 // 响应式数据
 const autoLock = ref(true)
+const lockTimeout = ref(30) // 固定30分钟
 const darkMode = ref(true)
+
+// 加载设置
+const loadSettings = async () => {
+  try {
+    const storage = getStorage()
+    const result = await storage.get(['settings'])
+    const settings = result.settings || {}
+
+    autoLock.value = settings.autoLock !== false // 默认开启
+    lockTimeout.value = settings.lockTimeout || 30 // 默认30分钟
+    darkMode.value = settings.darkMode !== false // 默认开启
+
+    console.log('Settings loaded:', settings)
+  } catch (error) {
+    console.error('Failed to load settings:', error)
+  }
+}
+
+// 保存设置
+const saveSettings = async () => {
+  try {
+    const storage = getStorage()
+    const settings = {
+      autoLock: autoLock.value,
+      lockTimeout: lockTimeout.value,
+      darkMode: darkMode.value
+    }
+
+    await storage.set({ settings })
+    console.log('Settings saved:', settings)
+  } catch (error) {
+    console.error('Failed to save settings:', error)
+  }
+}
+
+// 组件挂载时加载设置
+onMounted(() => {
+  loadSettings()
+})
+
+// 监听设置变化并自动保存
+watch([autoLock, lockTimeout, darkMode], () => {
+  saveSettings()
+}, { deep: true })
 
 // 头部相关方法已移至 TopHeader 组件中
 
 // 页面特定方法
 
 const createWallet = () => {
-  router.push('/create-wallet')
+  router.push('/select-chain')
 }
 
 const importWallet = () => {
@@ -196,25 +244,66 @@ const exportWallet = () => {
 }
 
 const changePassword = () => {
-  console.log('Change password...')
+  router.push('/change-password')
 }
 
 const manageNetworks = () => {
   console.log('Manage networks...')
 }
 
-const about = () => {
-  console.log('About...')
+const openPrivacyPolicy = () => {
+  window.open('https://www.riftwallet.io/privacy-policy/', '_blank')
 }
 
-const resetWallet = () => {
-  if (confirm('Are you sure you want to reset your wallet? This action cannot be undone.')) {
-    console.log('Reset wallet...')
+const openAbout = () => {
+  // 可以链接到关于页面或者显示版本信息
+  window.open('https://www.riftwallet.io/about/', '_blank')
+}
+
+// 锁定钱包
+const lockWallet = async () => {
+  try {
+    // 导入auth store
+    const { useAuthStore } = await import('@shared/stores/auth')
+    const authStore = useAuthStore()
+
+    // 清除密码会话
+    await authStore.clearPasswordSession()
+
+    // 跳转到密码验证页面
+    router.push('/verify-password')
+
+    console.log('Wallet locked successfully')
+  } catch (error) {
+    console.error('Failed to lock wallet:', error)
   }
 }
+
+// 退出钱包
+const logout = async () => {
+  if (confirm('Are you sure you want to logout? You will need to enter your password again to access the wallet.')) {
+    try {
+      // 导入auth store
+      const { useAuthStore } = await import('@shared/stores/auth')
+      const authStore = useAuthStore()
+
+      // 清除密码会话
+      await authStore.clearPasswordSession()
+
+      // 跳转到密码验证页面
+      router.push('/verify-password')
+
+      console.log('User logged out successfully')
+    } catch (error) {
+      console.error('Failed to logout:', error)
+    }
+  }
+}
+
+
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 /* 头部样式已移至 TopHeader 组件中 */
 
 .settings-content {
@@ -228,9 +317,7 @@ const resetWallet = () => {
   margin-bottom: 24px;
 }
 
-.settings-section.danger .section-title {
-  color: #ef4444;
-}
+
 
 .section-title {
   font-size: 16px;
@@ -263,13 +350,9 @@ const resetWallet = () => {
   background: rgba(255, 255, 255, 0.05);
 }
 
-.setting-item.danger {
-  color: #ef4444;
-}
 
-.setting-item.danger:hover {
-  background: rgba(239, 68, 68, 0.1);
-}
+
+
 
 .setting-icon {
   width: 40px;
@@ -282,18 +365,14 @@ const resetWallet = () => {
   margin-right: 12px;
 }
 
-.setting-item.danger .setting-icon {
-  background: rgba(239, 68, 68, 0.2);
-}
+
 
 .setting-icon i {
   font-size: 18px;
   color: #6366f1;
 }
 
-.setting-item.danger .setting-icon i {
-  color: #ef4444;
-}
+
 
 .setting-info {
   flex: 1;
@@ -306,9 +385,7 @@ const resetWallet = () => {
   margin-bottom: 2px;
 }
 
-.setting-item.danger .setting-name {
-  color: #ef4444;
-}
+
 
 .setting-desc {
   font-size: 14px;
@@ -344,6 +421,54 @@ const resetWallet = () => {
   background: white;
   border-radius: 50%;
   transition: all 0.2s ease;
+}
+
+
+
+/* 页面底部的锁定按钮样式 */
+.lock-section {
+  padding: 24px 16px 16px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 20px;
+}
+
+.lock-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  background: #ef4444;
+  border: none;
+  border-radius: 12px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+
+  &:hover {
+    background: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+  }
+
+  &:active {
+    transform: translateY(0);
+    background: #b91c1c;
+  }
+
+  i {
+    font-size: 18px;
+  }
+
+  span {
+    font-size: 16px;
+    font-weight: 600;
+  }
 }
 
 .setting-toggle input[type="checkbox"]:checked + .toggle-label {

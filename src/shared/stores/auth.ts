@@ -71,34 +71,20 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // 检查密码会话是否有效
+  // 检查密码会话是否有效（简化版本，主要检查是否存在会话标记）
   const checkPasswordSession = async () => {
     try {
       const storage = getStorage()
       const result = await storage.get([STORAGE_KEYS.LAST_PASSWORD_TIME])
       const lastPasswordTime = result[STORAGE_KEYS.LAST_PASSWORD_TIME]
 
-      console.log('Checking password session:', {
-        lastPasswordTime,
-        now: Date.now(),
-        timeout: APP_CONFIG.PASSWORD_SESSION_TIMEOUT
-      })
-
+      // 只要存在会话标记就认为有效，具体的超时检查由session-manager处理
       if (lastPasswordTime) {
-        const now = Date.now()
-        const timeDiff = now - lastPasswordTime
-        const isValid = timeDiff < APP_CONFIG.PASSWORD_SESSION_TIMEOUT
-
-        console.log('Session check result:', {
-          timeDiff,
-          isValid,
-          remainingTime: APP_CONFIG.PASSWORD_SESSION_TIMEOUT - timeDiff
-        })
-
-        isPasswordSessionValid.value = isValid
+        isPasswordSessionValid.value = true
+        console.log('Password session exists and is valid')
       } else {
-        console.log('No last password time found, session invalid')
         isPasswordSessionValid.value = false
+        console.log('No password session found')
       }
     } catch (err) {
       console.error('Failed to check password session:', err)

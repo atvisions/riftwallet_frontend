@@ -52,6 +52,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../popup/views/Settings.vue')
   },
   {
+    path: '/change-password',
+    name: 'ChangePassword',
+    component: () => import('../popup/views/ChangePassword.vue')
+  },
+  {
     path: '/markets',
     name: 'Markets',
     component: () => import('../popup/views/Markets.vue')
