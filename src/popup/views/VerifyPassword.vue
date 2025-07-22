@@ -1,5 +1,5 @@
 <template>
-  <div class="verify-password-page">
+  <div class="verify-password-page" v-if="!isRedirecting">
     <!-- Logo 和标题区域 -->
     <div class="header-section">
       <div class="logo-container">
@@ -54,153 +54,140 @@
     
 
   </div>
+
+  <!-- 重定向加载状态 -->
+  <div v-else class="redirecting-screen">
+    <div class="loading-content">
+      <img src="/icons/icon128.png" alt="Riftwallet" class="loading-logo">
+      <div class="loading-spinner"></div>
+      <p>Redirecting...</p>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@shared/stores/auth'
 import { useWalletStore } from '@shared/stores/wallet'
 import { APP_CONFIG } from '@shared/constants'
+import { verificationState } from '@shared/utils/verification-state'
 
-// 添加详细日志来诊断问题
-console.log('🔐 VerifyPassword.vue - 页面开始加载')
-console.log('🌐 当前环境信息:', {
-  href: window.location.href,
-  pathname: window.location.pathname,
-  hash: window.location.hash,
-  windowSize: { width: window.innerWidth, height: window.innerHeight }
-})
-
-// 添加详细日志来诊断问题
-console.log('🔐 VerifyPassword.vue - 组件开始加载')
-console.log('🌐 当前环境信息:', {
-  href: window.location.href,
-  pathname: window.location.pathname,
-  windowSize: { width: window.innerWidth, height: window.innerHeight }
-})
+console.log('🔐 VerifyPassword.vue - 组件加载')
 
 const router = useRouter()
 const authStore = useAuthStore()
-const walletStore = useWalletStore()
 
-// 获取 App.vue 中的验证标志（通过 provide/inject 或全局状态）
-// 这里我们使用一个简单的方法来重置标志
-const resetVerifyingFlag = () => {
-  // 通过 sessionStorage 来协调状态
-  sessionStorage.removeItem('isVerifyingPassword')
-}
+// 使用全局验证状态
+
+// 组件挂载时的调试信息
+onMounted(async () => {
+  console.log('🔐 VerifyPassword 组件已挂载')
+  console.log('🔐 当前路由:', router.currentRoute.value.path)
+  console.log('🔐 认证状态:', {
+    isAuthenticated: authStore.isAuthenticated,
+    hasPaymentPassword: authStore.hasPaymentPassword,
+    isPasswordSessionValid: authStore.isPasswordSessionValid
+  })
+
+  // 如果正在处理中，不要重复处理
+  if (verificationState.isBusy()) {
+    console.log('🔐 验证或导航正在进行中，跳过处理')
+    return
+  }
+
+  // 如果会话已经有效，直接跳转
+  if (authStore.isPasswordSessionValid) {
+    console.log('🔐 会话已有效，直接跳转到首页')
+    isRedirecting.value = true
+    verificationState.setNavigating(true)
+    const walletStore = useWalletStore()
+    await walletStore.loadWallets()
+    const targetRoute = walletStore.wallets.length > 0 ? '/' : '/wallet-choice'
+    await router.replace(targetRoute)
+    return
+  }
+})
+
+// 组件卸载时重置标志
+onBeforeUnmount(() => {
+  verificationState.reset()
+})
 
 // 响应式数据
 const password = ref('')
 const showPassword = ref(false)
 const loading = ref(false)
 const error = ref('')
+const isRedirecting = ref(false)
 
 // 处理密码验证
 const handleVerifyPassword = async () => {
-  console.log('🔐 开始密码验证流程')
-  console.log('📝 输入的密码长度:', password.value.length)
-
   if (!password.value) {
-    console.log('❌ 密码为空，停止验证')
+    error.value = 'Please enter your password'
+    return
+  }
+
+  // 检查是否已在处理中
+  if (verificationState.isBusy()) {
+    console.log('🔐 密码验证已在进行中，跳过重复验证')
     return
   }
 
   try {
+    verificationState.setVerifying(true)
     loading.value = true
     error.value = ''
 
-    console.log('🔄 调用 authStore.verifyPaymentPassword')
-    console.log('🏪 当前 authStore 状态:', {
-      isAuthenticated: authStore.isAuthenticated,
-      deviceId: authStore.deviceId,
-      hasPaymentPassword: authStore.hasPaymentPassword,
-      isPasswordSessionValid: authStore.isPasswordSessionValid
-    })
+    console.log('🔐 开始简化密码验证流程')
 
+    // 直接验证密码并设置会话
     const isValid = await authStore.verifyPaymentPassword(password.value)
-    console.log('✅ 密码验证结果:', isValid)
 
-    if (isValid) {
-      console.log('🎉 密码验证成功，检查钱包状态')
-
-      // 验证成功后检查认证状态
-      console.log('🔍 验证后的 authStore 状态:', {
-        isAuthenticated: authStore.isAuthenticated,
-        deviceId: authStore.deviceId,
-        hasPaymentPassword: authStore.hasPaymentPassword,
-        isPasswordSessionValid: authStore.isPasswordSessionValid
-      })
-
-      // 等待状态更新完成
-      await nextTick()
-      await new Promise(resolve => setTimeout(resolve, 100))
-
-      // 再次确认会话状态已更新
-      if (!authStore.isPasswordSessionValid) {
-        console.warn('⚠️ 密码会话状态未正确更新，重新检查')
-        await authStore.checkPasswordSession()
-        await new Promise(resolve => setTimeout(resolve, 50))
-      }
-
-      // 加载钱包数据并检查是否有钱包
-      console.log('📱 开始加载钱包列表')
-      await walletStore.loadWallets()
-      console.log('📊 钱包加载完成，钱包数量:', walletStore.wallets.length)
-
-      // 确保状态完全更新后再跳转
-      console.log('🔄 最终状态检查:', {
-        hasPaymentPassword: authStore.hasPaymentPassword,
-        isPasswordSessionValid: authStore.isPasswordSessionValid,
-        walletsCount: walletStore.wallets.length
-      })
-
-      // 重置验证标志
-      resetVerifyingFlag()
-
-      if (walletStore.wallets.length > 0) {
-        // 有钱包，跳转到首页
-        console.log('🏠 有钱包，从密码验证页面跳转到首页')
-        // 使用 replace 而不是 push，避免在历史记录中留下验证页面
-        await router.replace('/')
-        console.log('✅ 路由跳转完成')
-      } else {
-        // 没有钱包，跳转到钱包选择页面
-        console.log('💼 没有钱包，从密码验证页面跳转到钱包选择页面')
-        await router.replace('/wallet-choice')
-        console.log('✅ 路由跳转完成')
-      }
-    } else {
-      console.log('❌ 密码验证失败')
+    if (!isValid) {
       error.value = 'Invalid password. Please try again.'
+      return
     }
+
+    console.log('✅ 密码验证成功，准备跳转')
+
+    // 立即隐藏组件，防止重新渲染
+    isRedirecting.value = true
+
+    // 设置导航标志，防止重复处理
+    verificationState.setNavigating(true)
+
+    // 等待会话状态更新
+    await new Promise(resolve => setTimeout(resolve, 200))
+
+    // 加载钱包数据
+    const walletStore = useWalletStore()
+    await walletStore.loadWallets()
+
+    // 决定跳转目标
+    const targetRoute = walletStore.wallets.length > 0 ? '/' : '/wallet-choice'
+    console.log(`🏠 跳转到: ${targetRoute}`)
+
+    // 直接跳转
+    await router.replace(targetRoute)
+
+    console.log('✅ 密码验证和跳转完成')
   } catch (err) {
     console.error('💥 密码验证过程中发生错误:', err)
     error.value = err instanceof Error ? err.message : 'Verification failed'
   } finally {
+    verificationState.reset()
     loading.value = false
-    console.log('�� 密码验证流程结束')
   }
 }
 
 // 页面挂载时的检查
 onMounted(() => {
   console.log('🔐 VerifyPassword.vue - 页面挂载完成')
-  console.log('🏪 挂载时的 authStore 状态:', {
+  console.log('🏪 当前认证状态:', {
     isAuthenticated: authStore.isAuthenticated,
-    deviceId: authStore.deviceId,
     hasPaymentPassword: authStore.hasPaymentPassword,
     isPasswordSessionValid: authStore.isPasswordSessionValid
-  })
-  console.log('📱 挂载时的 walletStore 状态:', {
-    walletsCount: walletStore.wallets.length,
-    currentWallet: walletStore.currentWallet
-  })
-  console.log('🌐 挂载时的路由信息:', {
-    currentRoute: router.currentRoute.value.path,
-    query: router.currentRoute.value.query,
-    params: router.currentRoute.value.params
   })
 })
 
@@ -392,6 +379,44 @@ onMounted(() => {
 
 
 
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// 重定向加载状态样式
+.redirecting-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--dark);
+  color: var(--text-primary);
+}
+
+.loading-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.loading-logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border-color);
+  border-top: 3px solid var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
 
 @keyframes spin {
   0% { transform: rotate(0deg); }

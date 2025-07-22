@@ -13,6 +13,12 @@ const router = createRouter({
   routes
 })
 
+// 简化的路由守卫
+router.beforeEach(async (to, from, next) => {
+  console.log(`🔄 Popup Router: ${from.path} -> ${to.path}`)
+  next()
+})
+
 // 创建应用
 const app = createApp(App)
 

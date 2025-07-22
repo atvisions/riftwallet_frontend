@@ -21,6 +21,7 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@shared/stores/auth'
 import { useWalletStore } from '@shared/stores/wallet'
+import { initializeAppSimple } from '@shared/utils/auth-handler'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -33,47 +34,13 @@ onMounted(async () => {
   console.log('Riftwallet Side Panel App mounted')
 
   try {
-    // 初始化认证状态
-    await authStore.initialize()
-    console.log('Side Panel Auth initialized:', {
-      hasPassword: authStore.hasPaymentPassword,
-      sessionValid: authStore.isPasswordSessionValid,
-      deviceId: authStore.deviceId
-    })
-
-    // 根据用户状态决定路由
-    if (authStore.hasPaymentPassword) {
-      if (authStore.isPasswordSessionValid) {
-        // 已设置密码且会话有效，检查是否有钱包
-        console.log('Password set and session valid, checking wallet status')
-        await walletStore.loadWallets()
-
-        if (walletStore.wallets.length > 0) {
-          // 有钱包，直接进入首页
-          console.log('Has wallets, staying on home page')
-          if (router.currentRoute.value.path !== '/') {
-            router.replace('/')
-          }
-        } else {
-          // 没有钱包，跳转到钱包选择页面
-          console.log('No wallets found, redirecting to wallet choice')
-          router.replace('/wallet-choice')
-        }
-      } else {
-        // 已设置密码但会话过期，需要验证密码
-        console.log('Password set but session expired, redirecting to verify password')
-        router.replace('/verify-password')
-      }
-    } else {
-      // 未设置密码，跳转到设置密码页面
-      console.log('No password set, redirecting to setup password')
-      await router.replace('/setup-password')
-    }
+    // 使用简化的初始化逻辑
+    await initializeAppSimple(router, 'sidepanel')
 
     // 等待路由跳转完成后再设置初始化完成
     await router.isReady()
     isInitialized.value = true
-    console.log('Side Panel initialization completed')
+    console.log('✅ Sidepanel 简化初始化完成')
   } catch (error) {
     console.error('Failed to initialize side panel app:', error)
     // 即使出错也要设置初始化完成，避免永远卡在加载状态

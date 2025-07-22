@@ -263,19 +263,34 @@ const openAbout = () => {
 // 锁定钱包
 const lockWallet = async () => {
   try {
+    console.log('🔒 开始锁定钱包 (Popup模式)')
+
     // 导入auth store
     const { useAuthStore } = await import('@shared/stores/auth')
     const authStore = useAuthStore()
 
     // 清除密码会话
     await authStore.clearPasswordSession()
+    console.log('🔒 密码会话已清除')
 
-    // 跳转到密码验证页面
-    router.push('/verify-password')
+    // 对于弹窗模式，使用特殊的导航方式
+    console.log('🔒 准备跳转到密码验证页面')
+
+    // 先尝试正常路由跳转
+    try {
+      await router.replace('/verify-password')
+      console.log('🔒 路由跳转成功')
+    } catch (routeError) {
+      console.warn('🔒 路由跳转失败，尝试强制导航:', routeError)
+      // 如果路由跳转失败，使用 window.location
+      window.location.hash = '#/verify-password'
+    }
 
     console.log('Wallet locked successfully')
   } catch (error) {
     console.error('Failed to lock wallet:', error)
+    // 最后的备用方案
+    window.location.hash = '#/verify-password'
   }
 }
 

@@ -4,14 +4,14 @@
     :show-header="true"
     :show-footer="false"
     :scrollable="true"
-    @back="$router.go(-1)"
+    @back="handleBack"
     @scroll.native="handleScroll"
   >
     <!-- 自定义头部 -->
     <template #header>
       <div class="page-header">
         <div class="header-left">
-          <button @click="$router.go(-1)" class="back-button">
+          <button @click="handleBack" class="back-button">
             <i class="ri-arrow-left-line"></i>
           </button>
           <h1 class="header-title">Transaction History</h1>
@@ -142,11 +142,13 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useWalletStore } from '@shared/stores/wallet'
 import { APP_CONFIG } from '@shared/constants'
 import { formatAddress } from '@shared/utils'
 import ResponsiveLayout from '@/popup/components/ResponsiveLayout.vue'
 
+const router = useRouter()
 const walletStore = useWalletStore()
 
 // 响应式数据
@@ -453,6 +455,25 @@ const formatTime = (timestamp: string | number) => {
 const viewTransactionDetail = (transaction: any) => {
   // TODO: 实现交易详情页面
   console.log('View transaction detail:', transaction)
+}
+
+// 处理返回按钮
+const handleBack = () => {
+  try {
+    console.log('🔙 处理交易历史页面返回')
+
+    // 检查历史记录长度
+    if (window.history.length > 1) {
+      router.go(-1)
+    } else {
+      // 如果没有历史记录，直接跳转到首页
+      router.replace('/')
+    }
+  } catch (error) {
+    console.error('返回操作失败:', error)
+    // 如果路由操作失败，强制跳转到首页
+    router.replace('/')
+  }
 }
 
 // 生命周期

@@ -18,19 +18,11 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   }
 })
 
-// 处理扩展图标点击事件（Phantom 风格：总是打开弹窗）
+// 处理扩展图标点击事件
 chrome.action.onClicked.addListener(async (tab) => {
-  console.log('Background: Extension icon clicked, opening popup (Phantom-style)')
+  console.log('Background: Extension icon clicked, opening popup')
 
   try {
-    const windowId = tab.windowId
-    if (!windowId) {
-      throw new Error('No window ID available')
-    }
-
-    // Phantom 风格：扩展图标总是打开弹窗，不是侧边栏
-    console.log('Background: Opening popup window')
-
     // 方法1: 尝试使用 chrome.action.openPopup()
     try {
       await chrome.action.openPopup()
@@ -40,28 +32,12 @@ chrome.action.onClicked.addListener(async (tab) => {
 
       // 方法2: 降级到新标签页
       await chrome.tabs.create({
-        url: chrome.runtime.getURL('src/popup/index.html'),
-        windowId
+        url: chrome.runtime.getURL('src/popup/index.html')
       })
       console.log('Background: Popup opened as new tab')
     }
-
-    // 更新状态
-    windowModes.set(windowId, 'popup')
-
   } catch (error) {
     console.error('Background: Failed to handle icon click:', error)
-
-    // 最终降级处理
-    try {
-      console.log('Background: Final fallback - opening popup tab')
-      await chrome.tabs.create({
-        url: chrome.runtime.getURL('src/popup/index.html'),
-        windowId: tab.windowId
-      })
-    } catch (fallbackError) {
-      console.error('Background: All methods failed:', fallbackError)
-    }
   }
 })
 
@@ -70,8 +46,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === 'open-popup') {
     try {
       await chrome.tabs.create({
-        url: chrome.runtime.getURL('src/popup/index.html'),
-        windowId: tab?.windowId
+        url: chrome.runtime.getURL('src/popup/index.html')
       })
     } catch (error) {
       console.error('Failed to open popup:', error)
@@ -79,94 +54,41 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   }
 })
 
-// 存储当前窗口模式状态
-const windowModes = new Map<number, 'popup' | 'sidepanel'>()
+// 简化版本：移除复杂的窗口管理
 
 // 监听侧边栏相关的消息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log('Background: Received message:', message.type, 'from sender:', sender)
 
   if (message.type === 'TOGGLE_SIDEPANEL') {
-    handleToggleSidePanel(sender.tab?.windowId)
+    handleToggleSidePanel()
       .then(() => sendResponse({ success: true }))
       .catch(error => sendResponse({ success: false, error: error.message }))
     return true
   }
 
-  if (message.type === 'SWITCH_TO_SIDEPANEL') {
-    handleSwitchToSidePanel(message.windowId)
-      .then(() => sendResponse({ success: true }))
-      .catch(error => sendResponse({ success: false, error: error.message }))
-    return true
-  }
-
-  if (message.type === 'SWITCH_TO_POPUP') {
-    handleSwitchToPopup(message.windowId)
-      .then(() => sendResponse({ success: true }))
-      .catch(error => sendResponse({ success: false, error: error.message }))
-    return true
-  }
-
-  if (message.type === 'GET_WINDOW_MODE') {
-    handleGetWindowMode(message.windowId)
-      .then(mode => sendResponse({ success: true, mode }))
-      .catch(error => sendResponse({ success: false, error: error.message }))
-    return true
-  }
-
-  if (message.type === 'CLOSE_SIDEPANEL') {
-    handleCloseSidePanel(message.windowId)
-      .then(() => sendResponse({ success: true }))
-      .catch(error => sendResponse({ success: false, error: error.message }))
-    return true
-  }
-
-  if (message.type === 'REOPEN_WALLET') {
-    handleReopenWallet(message.windowId)
-      .then(() => sendResponse({ success: true }))
-      .catch(error => sendResponse({ success: false, error: error.message }))
-    return true
-  }
-
-  if (message.type === 'CLOSE_SIDEPANEL_PHANTOM_STYLE') {
-    handleCloseSidePanelPhantomStyle(message.windowId)
-      .then(() => sendResponse({ success: true }))
-      .catch(error => sendResponse({ success: false, error: error.message }))
-    return true
-  }
+  return false // 让其他消息处理器处理
 })
 
-// 切换侧边栏显示状态
-async function handleToggleSidePanel(windowId?: number) {
-  console.log('Background: handleToggleSidePanel called with windowId:', windowId)
+// 简化的侧边栏切换功能
+async function handleToggleSidePanel() {
+  console.log('Background: handleToggleSidePanel called')
 
   if (!chrome.sidePanel) {
     throw new Error('Side Panel API not available')
   }
 
   try {
-    // 如果没有 windowId，获取当前活动窗口
-    let targetWindowId = windowId
-    if (!targetWindowId) {
-      console.log('Background: No windowId provided, getting current window...')
-      const currentWindow = await chrome.windows.getCurrent()
-      targetWindowId = currentWindow.id
-      console.log('Background: Using current window ID:', targetWindowId)
-    }
-
-    if (!targetWindowId) {
-      throw new Error('Unable to determine target window')
-    }
-
-    console.log('Background: Opening side panel for window:', targetWindowId)
-    await chrome.sidePanel.open({ windowId: targetWindowId })
+    // 打开侧边栏
+    await chrome.sidePanel.open({ windowId: undefined })
     console.log('Background: Side panel opened successfully')
-
   } catch (error) {
     console.error('Background: Failed to toggle side panel:', error)
     throw error
   }
 }
+
+// 移除重复的函数定义
 
 // 切换到侧边栏模式
 async function handleSwitchToSidePanel(windowId?: number) {
@@ -842,17 +764,5 @@ async function refreshTokenPrices(walletId: number) {
   }
 }
 
-// 定期刷新数据
-chrome.alarms.create('refreshData', { periodInMinutes: 5 })
-
-chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm.name === 'refreshData') {
-    try {
-      // 刷新钱包数据
-      await getWallets()
-      console.log('Data refreshed')
-    } catch (error) {
-      console.error('Failed to refresh data:', error)
-    }
-  }
-})
+// 注释：移除了定期刷新功能以符合Chrome Web Store政策
+// 用户可以手动刷新钱包数据

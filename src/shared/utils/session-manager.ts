@@ -37,18 +37,28 @@ async function getAutoLockSettings() {
 async function shouldLockWallet(): Promise<boolean> {
   const settings = await getAutoLockSettings()
 
+  console.log('🔒 Auto-lock check:', {
+    autoLock: settings.autoLock,
+    lockTimeout: settings.lockTimeout,
+    lastActivityTime: new Date(lastActivityTime).toISOString(),
+    currentTime: new Date().toISOString()
+  })
+
   // 如果关闭了Auto-lock，永不锁定
   if (!settings.autoLock) {
+    console.log('🔒 Auto-lock disabled')
     return false
   }
 
   // 如果设置为"永不"锁定
   if (settings.lockTimeout === -1) {
+    console.log('🔒 Auto-lock set to never')
     return false
   }
 
   // 如果设置为"立即"锁定
   if (settings.lockTimeout === 0) {
+    console.log('🔒 Auto-lock set to immediate')
     return true
   }
 
@@ -57,7 +67,15 @@ async function shouldLockWallet(): Promise<boolean> {
   const inactiveTime = now - lastActivityTime
   const timeoutMs = settings.lockTimeout * 60 * 1000 // 转换为毫秒
 
-  return inactiveTime >= timeoutMs
+  const shouldLock = inactiveTime >= timeoutMs
+
+  console.log('🔒 Inactivity check:', {
+    inactiveTimeMinutes: Math.round(inactiveTime / 60000),
+    timeoutMinutes: settings.lockTimeout,
+    shouldLock
+  })
+
+  return shouldLock
 }
 
 /**
@@ -74,29 +92,41 @@ export function startSessionCheck() {
 
   // 每30秒检查一次会话状态（更频繁的检查）
   sessionCheckInterval = setInterval(async () => {
-    const authStore = useAuthStore()
+    try {
+      const authStore = useAuthStore()
 
-    // 如果用户没有设置密码，不需要检查
-    if (!authStore.hasPaymentPassword) {
-      return
-    }
+      // 如果用户没有设置密码，不需要检查
+      if (!authStore.hasPaymentPassword) {
+        return
+      }
 
-    // 检查是否应该锁定钱包
-    const shouldLock = await shouldLockWallet()
+      // 检查是否应该锁定钱包
+      const shouldLock = await shouldLockWallet()
 
-    if (shouldLock) {
-      console.log('Auto-lock triggered due to inactivity, redirecting to verify password')
+      if (shouldLock) {
+        console.log('🔒 Auto-lock triggered due to inactivity, redirecting to verify password')
 
-      // 清除会话
-      await authStore.clearPasswordSession()
+        // 清除会话
+        await authStore.clearPasswordSession()
 
-      // 跳转到密码验证页面
-      const router = useRouter()
-      router.push('/verify-password')
+        // 跳转到密码验证页面
+        if (currentRouter) {
+          // 检查当前是否已经在密码验证页面，避免重复跳转
+          const currentPath = currentRouter.currentRoute.value.path
+          if (currentPath !== '/verify-password') {
+            console.log('🔒 Redirecting to password verification due to auto-lock')
+            await currentRouter.push('/verify-password')
+          }
+        } else {
+          console.error('❌ Router not available for auto-lock redirect')
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error in session check:', error)
     }
   }, 30 * 1000) // 每30秒检查一次
 
-  console.log('Session check started with activity-based auto-lock')
+  console.log('✅ Session check started with activity-based auto-lock')
 }
 
 /**

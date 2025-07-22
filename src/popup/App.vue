@@ -20,6 +20,7 @@ import { useRouter } from 'vue-router'
 import { useWalletStore } from '@shared/stores/wallet'
 import { useAuthStore } from '@shared/stores/auth'
 import { startSessionCheck, stopSessionCheck, setupActivityRefresh } from '@shared/utils/session-manager'
+import { initializeAppSimple } from '@shared/utils/auth-handler'
 
 const router = useRouter()
 const walletStore = useWalletStore()
@@ -75,65 +76,13 @@ onMounted(async () => {
       return
     }
 
-    // 初始化应用
-    await authStore.initialize()
-
-    console.log('Auth state:', {
-      needsPasswordSetup: authStore.needsPasswordSetup,
-      hasPaymentPassword: authStore.hasPaymentPassword,
-      canAccessWallet: authStore.canAccessWallet,
-      isPasswordSessionValid: authStore.isPasswordSessionValid,
-      currentRoute: router.currentRoute.value.path
-    })
-
-    // 只在首次加载或特定路由时执行路由逻辑
-    const currentPath = router.currentRoute.value.path
-    const isRootPath = currentPath === '/' || currentPath === '/popup.html'
-
-    // 只在根路径或首次初始化时执行路由逻辑
-    if (isRootPath) {
-      console.log('Executing routing logic for path:', currentPath)
-
-      // 根据用户状态决定路由
-      if (authStore.hasPaymentPassword) {
-        if (authStore.isPasswordSessionValid) {
-          // 已设置密码且会话有效，检查是否有钱包
-          console.log('Password set and session valid, checking wallet status')
-          await walletStore.loadWallets()
-
-          if (walletStore.wallets.length > 0) {
-            // 有钱包，直接进入首页
-            console.log('Has wallets, staying on home page')
-            // 不需要跳转，已经在首页
-          } else {
-            // 没有钱包，跳转到钱包选择页面
-            console.log('No wallets found, redirecting to wallet choice')
-            await router.replace('/wallet-choice')
-          }
-        } else {
-          // 已设置密码但会话过期，需要验证密码
-          console.log('Password set but session expired, redirecting to verify password')
-          await router.replace('/verify-password')
-        }
-      } else {
-        // 未设置密码，跳转到设置密码页面
-        console.log('No password set, redirecting to setup password')
-        await router.replace('/setup-password')
-      }
-    } else {
-      console.log('Skipping routing logic for non-root path:', currentPath)
-    }
-
-    // 启动会话管理（只启动一次）
-    if (authStore.hasPaymentPassword) {
-      startSessionCheck()
-      setupActivityRefresh()
-    }
+    // 使用简化的初始化逻辑
+    await initializeAppSimple(router, 'popup')
 
     // 等待路由跳转完成后再设置初始化完成
     await router.isReady()
     isInitialized.value = true
-    console.log('App initialization completed')
+    console.log('✅ Popup 简化初始化完成')
   } catch (error) {
     console.error('Failed to initialize app:', error)
     // 即使出错也要设置初始化完成，避免永远卡在加载状态
@@ -141,9 +90,9 @@ onMounted(async () => {
   }
 })
 
-// 监听路由变化，防止重复的密码验证
+// 监听路由变化，使用统一的路由守卫逻辑
 watch(() => router.currentRoute.value.path, async (newPath, oldPath) => {
-  console.log('Route changed from', oldPath, 'to', newPath)
+  console.log('🔄 Route changed from', oldPath, 'to', newPath)
 
   // 定义不需要重新验证的页面跳转情况
   const skipVerificationCases = [
@@ -160,38 +109,34 @@ watch(() => router.currentRoute.value.path, async (newPath, oldPath) => {
   ]
 
   if (skipVerificationCases.some(condition => condition)) {
-    console.log('Skipping route logic - coming from authentication/wallet setup flow')
+    console.log('✅ Skipping route logic - coming from authentication/wallet setup flow')
     return
   }
 
-  // 如果跳转到首页且已经初始化过，检查是否需要重新验证
+  // 如果跳转到首页且已经初始化过，使用统一的路由守卫检查
   if (newPath === '/' && isInitialized.value) {
-    // 检查是否正在验证密码（通过 sessionStorage 协调）
-    const isCurrentlyVerifying = sessionStorage.getItem('isVerifyingPassword') === 'true'
+    // 导入路由守卫工具
+    const { routeGuard, isCurrentlyVerifying } = await import('@shared/utils/route-guard')
 
-    if (isCurrentlyVerifying) {
-      console.log('Already verifying password, skipping duplicate check')
+    if (isCurrentlyVerifying()) {
+      console.log('🔐 Already verifying password, skipping duplicate check')
       return
     }
 
     // 给一个延迟，确保前一个页面的状态更新完成
     setTimeout(async () => {
-      // 再次检查是否正在验证
-      if (sessionStorage.getItem('isVerifyingPassword') === 'true') {
-        console.log('Password verification in progress, skipping')
+      if (isCurrentlyVerifying()) {
+        console.log('🔐 Password verification in progress, skipping')
         return
       }
 
-      // 重新检查会话状态
-      await authStore.checkPasswordSession()
-
-      // 只有在会话确实过期的情况下才重新验证
-      if (authStore.hasPaymentPassword && !authStore.isPasswordSessionValid) {
-        console.log('Session expired after delay check, redirecting to verify password')
-        sessionStorage.setItem('isVerifyingPassword', 'true')
-        router.push('/verify-password')
+      // 使用统一的路由守卫检查
+      const redirectPath = await routeGuard(router, newPath)
+      if (redirectPath) {
+        console.log('🔄 Route guard redirecting to:', redirectPath)
+        router.push(redirectPath)
       }
-    }, 300) // 减少延迟到300ms，但仍然给足够时间让状态更新
+    }, 300)
   }
 })
 

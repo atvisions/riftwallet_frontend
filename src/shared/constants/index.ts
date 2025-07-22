@@ -7,7 +7,7 @@ const getApiBaseUrl = () => {
 }
 
 export const APP_CONFIG = {
-  NAME: 'Riftwallet',
+  NAME: 'Riftwallet - Kadena Wallet',
   VERSION: '1.0.0',
   API_BASE_URL: getApiBaseUrl(),
   STORAGE_PREFIX: 'riftwallet_',

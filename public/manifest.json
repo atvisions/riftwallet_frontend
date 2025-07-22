@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Riftwallet",
+  "name": "Riftwallet - Kadena Wallet",
   "version": "1.0.0",
-  "description": "A secure multi-chain cryptocurrency wallet for Chrome",
+  "description": "The most trusted Kadena (KDA) wallet for Chrome - Secure, fast, and user-friendly",
   "author": "Riftwallet Team",
   
   "icons": {
@@ -12,7 +12,7 @@
   },
   
   "action": {
-    "default_title": "Riftwallet",
+    "default_title": "Riftwallet - Kadena Wallet",
     "default_popup": "src/popup/index.html",
     "default_icon": {
       "16": "icons/icon16.png",
@@ -30,53 +30,26 @@
     "type": "module"
   },
   
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content/index.js"],
-      "run_at": "document_start",
-      "all_frames": true,
-      "type": "module"
-    }
-  ],
+
   
   "options_page": "src/options/index.html",
   
   "permissions": [
     "storage",
     "activeTab",
-    "scripting",
-    "alarms",
-    "notifications",
     "sidePanel",
-    "windows",
-    "tabs",
     "contextMenus",
-    "clipboardRead",
-    "clipboardWrite"
+    "tabs"
   ],
   
   "host_permissions": [
-    "https://www.riftwallet.io/*",
-    "https://api.coingecko.com/*",
-    "https://api.cryptocompare.com/*"
+    "https://www.riftwallet.io/*"
   ],
   
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "content/injected.js",
-        "assets/*"
-      ],
-      "matches": ["<all_urls>"]
-    }
-  ],
+
   
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://www.riftwallet.io https://api.coingecko.com https://api.cryptocompare.com;"
-  },
-  
-  "externally_connectable": {
-    "matches": ["<all_urls>"]
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://www.riftwallet.io;"
   }
 }
+
